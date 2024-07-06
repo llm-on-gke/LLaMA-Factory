@@ -38,6 +38,7 @@ RUN pip uninstall -y transformer-engine flash-attn && \
 #COPY . /app
 RUN git clone https://github.com/llm-on-gke/LLaMA-Factory.git
 RUN cd LLaMA-Factory
+RUN cp ../requirements.txt .
 # Install the LLaMA Factory
 RUN EXTRA_PACKAGES="metrics"; \
     if [ "$INSTALL_BNB" == "true" ]; then \
