@@ -14,7 +14,8 @@ ARG INSTALL_FLASHATTN=false
 ARG PIP_INDEX=https://pypi.org/simple
 
 # Set the working directory
-WORKDIR /app
+RUN mkdir /app && cd /app
+
 
 # Install the requirements
 COPY requirements.txt /app
