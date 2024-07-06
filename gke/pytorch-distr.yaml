@@ -69,7 +69,7 @@ spec:
                   nvidia.com/gpu: 1
               volumeMounts:
               - name: gcs-fuse-csi-ephemeral
-                mountPath: /app/data
+                mountPath: /data
                 readOnly: false
               - name: hf-cache
                 mountPath: /root/.cache/huggingface
