@@ -36,7 +36,7 @@ COPY . /app
 # Install the LLaMA Factory
 RUN EXTRA_PACKAGES="metrics"; \
     if [ "$INSTALL_BNB" == "true" ]; then \
-        EXTRA_PACKAGES="${EXTRA_PACKAGES},bitsandbytes"; \
+        EXTRA_PACKAGES="${EXTRA_PACKAGES},bitsandbytes,autoawq"; \
     fi; \
     if [ "$INSTALL_VLLM" == "true" ]; then \
         EXTRA_PACKAGES="${EXTRA_PACKAGES},vllm"; \
