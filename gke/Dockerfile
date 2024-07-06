@@ -19,7 +19,7 @@ WORKDIR /app
 # Install the requirements
 COPY requirements.txt /app
 
-RUN pip install git+https://github.com/llm-on-gke/LLaMA-Factory.git
+#RUN pip install git+https://github.com/llm-on-gke/LLaMA-Factory.git
 
 RUN pip config set global.index-url "$PIP_INDEX" && \
     pip config set global.extra-index-url "$PIP_INDEX" && \
@@ -36,7 +36,7 @@ RUN pip uninstall -y transformer-engine flash-attn && \
 # Copy the rest of the application into the image
 #COPY . /app
 RUN git clone https://github.com/llm-on-gke/LLaMA-Factory.git
-
+RUN cd LLaMA-Factory
 # Install the LLaMA Factory
 RUN EXTRA_PACKAGES="metrics"; \
     if [ "$INSTALL_BNB" == "true" ]; then \
