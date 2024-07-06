@@ -66,7 +66,7 @@ spec:
                 value: "0"
               resources:
                 limits:
-                  nvidia.com/gpu: 1
+                  nvidia.com/gpu: 2
               volumeMounts:
               - name: gcs-fuse-csi-ephemeral
                 mountPath: /data
@@ -81,4 +81,4 @@ spec:
               - bash
               - -xc
               - |
-                FORCE_TORCHRUN=1 NNODES=2 RANK=$RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_qlora/llama3_lora_sft_awq.yaml
+                FORCE_TORCHRUN=1 NNODES=2 RANK=$RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_full/llama3_full_sft_ds3.yaml
