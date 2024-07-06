@@ -43,6 +43,11 @@ spec:
               ports:
               - containerPort: 3389
               env:
+              - name: HF_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: huggingface
+                    key: HF_TOKEN
               - name: HUGGING_FACE_HUB_TOKEN
                 valueFrom:
                   secretKeyRef:
