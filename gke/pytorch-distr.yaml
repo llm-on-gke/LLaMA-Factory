@@ -28,9 +28,9 @@ spec:
                   bucketName: "mlops-repo"
                   mountOptions: "implicit-dirs"
                   gcsfuseLoggingSeverity: warning
-           - name: hf_cache
+           - name: hf-cache
              emptyDir: {}
-           - name: model_cache
+           - name: model-cache
              emptyDir: {}
            - name: output
              emptyDir: {}
@@ -61,9 +61,9 @@ spec:
               - name: gcs-fuse-csi-ephemeral
                 mountPath: /app/data
                 readOnly: false
-              - name: hf_cache
+              - name: hf-cache
                 mountPath: /root/.cache/huggingface
-              - name: model_cache
+              - name: model-cache
                 mountPath: /root/.cache/modelscope
               - name: output
                 mountPath: /app/output
