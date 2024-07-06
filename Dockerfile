@@ -45,7 +45,8 @@ RUN EXTRA_PACKAGES="metrics"; \
         EXTRA_PACKAGES="${EXTRA_PACKAGES},deepspeed"; \
     fi; \
     pip install -e ".[$EXTRA_PACKAGES]"
-
+RUN apt-get update -y \
+    && apt-get install -y libaio-dev
 # Set up volumes
 VOLUME [ "/root/.cache/huggingface", "/root/.cache/modelscope", "/app/data", "/app/output" ]
 
