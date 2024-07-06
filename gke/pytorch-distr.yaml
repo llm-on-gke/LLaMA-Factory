@@ -45,9 +45,9 @@ spec:
               env:
               - name: HUGGING_FACE_HUB_TOKEN
                 valueFrom:
-                secretKeyRef:
-                  name: huggingface
-                  key: HF_TOKEN
+                  secretKeyRef:
+                     name: huggingface
+                     key: HF_TOKEN
               - name: MASTER_ADDR
                 value: "pytorch-workers-0-0.pytorch"
               - name: MASTER_PORT
