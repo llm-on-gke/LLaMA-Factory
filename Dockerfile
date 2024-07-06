@@ -9,19 +9,15 @@ ENV FLASH_ATTENTION_FORCE_BUILD=TRUE
 # Define installation arguments
 ARG INSTALL_BNB=false
 ARG INSTALL_VLLM=false
-ARG INSTALL_DEEPSPEED=false
+ARG INSTALL_DEEPSPEED=true
 ARG INSTALL_FLASHATTN=false
 ARG PIP_INDEX=https://pypi.org/simple
 
 # Set the working directory
-RUN mkdir /app && cd /app
-
+WORKDIR /app
 
 # Install the requirements
 COPY requirements.txt /app
-
-#RUN pip install git+https://github.com/llm-on-gke/LLaMA-Factory.git
-
 RUN pip config set global.index-url "$PIP_INDEX" && \
     pip config set global.extra-index-url "$PIP_INDEX" && \
     python -m pip install --upgrade pip && \
@@ -35,10 +31,8 @@ RUN pip uninstall -y transformer-engine flash-attn && \
     fi
 
 # Copy the rest of the application into the image
-#COPY . /app
-RUN git clone https://github.com/llm-on-gke/LLaMA-Factory.git
-RUN cd LLaMA-Factory
-RUN cp ../requirements.txt .
+COPY . /app
+
 # Install the LLaMA Factory
 RUN EXTRA_PACKAGES="metrics"; \
     if [ "$INSTALL_BNB" == "true" ]; then \
@@ -62,4 +56,3 @@ EXPOSE 7860
 # Expose port 8000 for the API service
 ENV API_PORT 8000
 EXPOSE 8000
-
