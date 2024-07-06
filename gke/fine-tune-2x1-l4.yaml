@@ -81,4 +81,4 @@ spec:
               - bash
               - -xc
               - |
-                FORCE_TORCHRUN=1 NNODES=2 RANK=$RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_full/llama3_full_sft_ds3.yaml
+                FORCE_TORCHRUN=1 NNODES=2 RANK=$RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml
