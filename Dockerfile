@@ -48,7 +48,7 @@ RUN EXTRA_PACKAGES="metrics"; \
 RUN apt-get update -y \
     && apt-get install -y libaio-dev
 # Set up volumes
-VOLUME [ "/root/.cache/huggingface", "/root/.cache/modelscope", "/app/data", "/app/output" ]
+#VOLUME [ "/root/.cache/huggingface", "/root/.cache/modelscope", "/app/data", "/app/output" ]
 
 # Expose port 7860 for the LLaMA Board
 ENV GRADIO_SERVER_PORT 7860
