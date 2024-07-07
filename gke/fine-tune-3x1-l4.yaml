@@ -1,0 +1,84 @@
+apiVersion: jobset.x-k8s.io/v1alpha2
+kind: JobSet
+metadata:
+  name: pytorch
+  
+spec:
+  replicatedJobs:
+  - name: workers
+    template:
+      spec:
+        parallelism: 3
+        completions: 3
+        backoffLimit: 0
+        template:
+          metadata:
+            annotations:
+               gke-gcsfuse/volumes: "true"
+          spec:
+           nodeSelector:
+             cloud.google.com/gke-accelerator: nvidia-l4 
+           serviceAccountName: csi-storage
+           volumes:
+           - name: gcs-fuse-csi-ephemeral
+             csi:
+               driver: gcsfuse.csi.storage.gke.io
+               readOnly: true
+               volumeAttributes:
+                  bucketName: "mlops-repo"
+                  mountOptions: "implicit-dirs"
+                  gcsfuseLoggingSeverity: warning
+           - name: hf-cache
+             emptyDir: {}
+           - name: model-cache
+             emptyDir: {}
+           - name: output
+             emptyDir: {}
+              
+           containers:
+            - name: gke-gcsfuse-sidecar
+              image: gke.gcr.io/gcs-fuse-csi-driver-sidecar-mounter:v1.2.0-gke.0@sha256:31880114306b1fb5d9e365ae7d4771815ea04eb56f0464a514a810df9470f88f
+            - name: pytorch
+              image: us-east1-docker.pkg.dev/rick-vertex-ai/gke-llm/llama-factory:latest
+              ports:
+              - containerPort: 3389
+              env:
+              - name: HF_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: huggingface
+                    key: HF_TOKEN
+              - name: HUGGING_FACE_HUB_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                     name: huggingface
+                     key: HF_TOKEN
+              - name: MASTER_ADDR
+                value: "pytorch-workers-0-0.pytorch"
+              - name: MASTER_PORT
+                value: "3389"
+              - name: RANK
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+              # Force python to not buffer output and write directly to stdout, so we can view training logs via `kubectl logs`.
+              - name: PYTHONUNBUFFERED
+                value: "0"
+              resources:
+                limits:
+                  nvidia.com/gpu: 1
+              volumeMounts:
+              - name: gcs-fuse-csi-ephemeral
+                mountPath: /data
+                readOnly: false
+              - name: hf-cache
+                mountPath: /root/.cache/huggingface
+              - name: model-cache
+                mountPath: /root/.cache/modelscope
+              - name: output
+                mountPath: /app/output
+              command:
+              - bash
+              - -xc
+              - |
+                FORCE_TORCHRUN=1 NNODES=3 RANK=$RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml
