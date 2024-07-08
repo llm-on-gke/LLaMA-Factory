@@ -1,0 +1,1 @@
+kubectl run  -ti dig --image=toolbelt/dig
