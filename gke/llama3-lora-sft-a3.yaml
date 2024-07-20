@@ -141,7 +141,7 @@ spec:
               - -xc
               - |
                 #cp -r -f /data/llama3_lora_sft.yaml examples/train_lora/llama3_lora_sft.yaml
-                FORCE_TORCHRUN=1 NNODES=$NNODES RANK=$NODE_RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_lora/llama3_lora_sft_ds2.yaml
+                FORCE_TORCHRUN=1 NNODES=$NNODES RANK=$NODE_RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml
               volumeMounts:
                - name: tcpx-socket
                  mountPath: /tmp
