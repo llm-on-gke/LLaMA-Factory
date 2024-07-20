@@ -13,9 +13,9 @@ spec:
         completions: 2
         backoffLimit: 0
         template:
-          metadata:
-            annotations:
-               gke-gcsfuse/volumes: "true"
+          #metadata:
+          #  annotations:
+          #     gke-gcsfuse/volumes: "true"
           spec:
             nodeSelector:
              cloud.google.com/gke-accelerator: nvidia-h100-80gb
@@ -140,15 +140,15 @@ spec:
               - bash
               - -xc
               - |
-                cp -r -f /data/llama3_lora_sft.yaml examples/train_lora/llama3_lora_sft.yaml
-                FORCE_TORCHRUN=1 NNODES=$NNODES RANK=$NODE_RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml
+                #cp -r -f /data/llama3_lora_sft.yaml examples/train_lora/llama3_lora_sft.yaml
+                FORCE_TORCHRUN=1 NNODES=$NNODES RANK=$NODE_RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_lora/llama3_lora_sft_ds2.yaml
               volumeMounts:
                - name: tcpx-socket
                  mountPath: /tmp
                - name: libraries
                  mountPath: /usr/local/nvidia/lib64
                  readOnly: true
-               - name: gcs-fuse-csi-ephemeral
+               - name: data
                  mountPath: /data
                - name: hf-cache
                  mountPath: /root/.cache/huggingface
@@ -168,20 +168,20 @@ spec:
             - name: proc-sys
               hostPath:
                 path: /proc/sys
-            #- name: data
-            #  emptyDir: {}
+            - name: data
+              emptyDir: {}
             - name: hf-cache
               emptyDir: {}
             - name: model-cache
               emptyDir: {}
             - name: output
               emptyDir: {}
-            - name: gcs-fuse-csi-ephemeral
-              csi:
-                driver: gcsfuse.csi.storage.gke.io
-                readOnly: false
-                volumeAttributes:
-                   bucketName: rick-llama-factory
-                   mountOptions: "implicit-dirs"
-                   gcsfuseLoggingSeverity: warning
-                   fileCacheCapacity: "200Gi"
+            #- name: gcs-fuse-csi-ephemeral
+            #  csi:
+            #    driver: gcsfuse.csi.storage.gke.io
+            #    readOnly: false
+            #    volumeAttributes:
+            #       bucketName: rick-llama-factory
+            #       mountOptions: "implicit-dirs"
+            #       gcsfuseLoggingSeverity: warning
+            #       fileCacheCapacity: "200Gi"
