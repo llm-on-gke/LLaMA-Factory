@@ -21,7 +21,12 @@ spec:
           #     gke-gcsfuse/volumes: "true"
           spec:
             nodeSelector:
-             cloud.google.com/gke-accelerator: nvidia-h100-80gb
+             #cloud.google.com/gke-accelerator: nvidia-h100-80gb
+             cloud.google.com/gke-nodepool: NODEPOOL_NAME
+            tolerations:
+             - key: "nvidia.com/gpu"
+               operator: "Exists"
+               effect: "NoSchedule"
             hostNetwork: true
             dnsPolicy: ClusterFirstWithHostNet
             containers:
