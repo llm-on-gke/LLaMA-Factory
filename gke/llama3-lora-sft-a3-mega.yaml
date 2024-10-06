@@ -8,27 +8,34 @@ spec:
   replicatedJobs:
   - name: workers
     template:
-      #labels:
-      #   kueue.x-k8s.io/queue-name: dws-local-queue
-      #annotations:
-      #   provreq.kueue.x-k8s.io/maxRunDurationSeconds: "600"
+      metadata:
+       labels:
+          kueue.x-k8s.io/queue-name: dws-local-queue
+       annotations:
+          provreq.kueue.x-k8s.io/maxRunDurationDays: "7"
       spec:
         parallelism: 2
         completions: 2
-        #suspend: true
+        suspend: true
         backoffLimit: 0
         template:
           metadata:
              annotations:
                gke-gcsfuse/volumes: "true"
           spec:
-            schedulingGates:
-            - name: "gke.io/topology-aware-auto-scheduling-pytorch"
+            #schedulingGates:
+            #- name: "gke.io/topology-aware-auto-scheduling-pytorch"
             hostNetwork: true
             dnsPolicy: ClusterFirstWithHostNet
             nodeSelector:
-               cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb
+               #cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb
+               cloud.google.com/gke-accelerator: dws-a3-mega #dws
+            tolerations:
+               - key: "nvidia.com/gpu"
+                 operator: "Exists"
+                 effect: "NoSchedule"
             serviceAccountName: storage-access
+            restartPolicy: Never
             volumes:
             - name: libraries
               hostPath:
