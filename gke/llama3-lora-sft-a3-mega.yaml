@@ -8,14 +8,14 @@ spec:
   replicatedJobs:
   - name: workers
     template:
-      labels:
-         kueue.x-k8s.io/queue-name: dws-local-queue
-      annotations:
-         provreq.kueue.x-k8s.io/maxRunDurationSeconds: "600"
+      #labels:
+      #   kueue.x-k8s.io/queue-name: dws-local-queue
+      #annotations:
+      #   provreq.kueue.x-k8s.io/maxRunDurationSeconds: "600"
       spec:
         parallelism: 2
         completions: 2
-        suspend: true
+        #suspend: true
         backoffLimit: 0
         template:
           metadata:
