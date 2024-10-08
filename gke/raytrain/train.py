@@ -110,7 +110,7 @@ fsdp_strategy = RayFSDPStrategy(
     activation_checkpointing=[GPTNeoXLayer],
 )
 
-num_workers = 16
+num_workers = 8
 batch_size_per_worker = 10
 
 from ray.train import Checkpoint
@@ -146,7 +146,7 @@ def train_func(config):
 
     trainer.fit(model, train_dataloaders=train_dataloader)
 
-storage_path="s3://your-bucket-here"  # TODO: Set up cloud storage
+storage_path="/gcs-dir"  # TODO: Set up cloud storage
 # storage_path="/mnt/path/to/nfs"     # TODO: Alternatively, set up NFS
 from ray.train.torch import TorchTrainer
 from ray.train import RunConfig, ScalingConfig, CheckpointConfig
