@@ -1,3 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "ray-job"
+spec:
+  clusterIP: None
+  selector:
+    job-name: "ray-jpb"
+
+---
 apiVersion: ray.io/v1
 kind: RayJob
 metadata:
@@ -34,42 +44,17 @@ spec:
                   cpu: "2"
                   memory: "4Gi"
     workerGroupSpecs:
-    - replicas: 2
-      minReplicas: 1
-      maxReplicas: 5
-      groupName: small-group
-      rayStartParams: 
-         num-gpus: "8"
-      template:
-        spec:
-          containers:
-            - name: ray-head
-              image: rayproject/ray:2.9.0
-              ports:
-                - containerPort: 6379
-                  name: gcs-server
-                - containerPort: 8265
-                  name: dashboard
-                - containerPort: 10001
-                  name: client
-              resources:
-                limits:
-                  cpu: "2"
-                  memory: "4Gi"
-                requests:
-                  cpu: "2"
-                  memory: "4Gi"
-  workerGroupSpecs:
-  - groupName: small-group
-    maxReplicas: 300
-    minReplicas: 1
-    rayStartParams:
-      num-gpus: "8"
-    replicas: 2
-    template:
+      - replicas: 2
+        minReplicas: 1
+        maxReplicas: 5
+        groupName: small-group
+        rayStartParams: 
+           num-gpus: "8"
+        template:
           metadata:
              #labels:
              #  kueue.x-k8s.io/queue-name: dws-local-queue
+             name: ray-job
              annotations:
                gke-gcsfuse/volumes: "true"
           spec:
@@ -77,6 +62,7 @@ spec:
             #- name: "gke.io/topology-aware-auto-scheduling-pytorch"
             hostNetwork: true
             dnsPolicy: ClusterFirstWithHostNet
+            subdomain: "ray-job"
             nodeSelector:
                #cloud.google.com/gke-nodepool: dws-a3-mega
                cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb
@@ -167,7 +153,7 @@ spec:
                      name: huggingface
                      key: HF_TOKEN
               - name: MASTER_ADDR
-                value: "pytorch-workers-0-0.pytorch"
+                value: "ray-job-0.ray-job.training-job.svc.cluster.local"
               - name: MASTER_PORT
                 value: "3389"
               - name: NODE_COUNT
@@ -188,13 +174,13 @@ spec:
                 value: /usr/local/nvidia/lib64
               # - name: TRITON_CACHE_DIR
               #   value: irreverent-datasets/torch-compiler-cache
-              lifecycle:
-               preStop:
-               exec:
-                command:
-                - /bin/sh
-                - -c
-                - ray stop
+              command:
+              - bash
+              - -xc
+              - |
+                NCCL_LIB_DIR="/usr/local/nvidia/lib64"
+                source ${NCCL_LIB_DIR}/nccl-env-profile.sh
+                sleep infinity
               securityContext:
                 privileged: true
               resources:
