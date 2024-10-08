@@ -8,18 +8,20 @@ spec:
   replicatedJobs:
   - name: workers
     template:
-      metadata:
-       labels:
-          kueue.x-k8s.io/queue-name: dws-local-queue
-       annotations:
-          provreq.kueue.x-k8s.io/maxRunDurationDays: "7"
+      #metadata:
+      # labels:
+      #   kueue.x-k8s.io/queue-name: dws-local-queue
+      # annotations:
+      #   provreq.kueue.x-k8s.io/maxRunDurationSeconds: "3600"
       spec:
         parallelism: 2
         completions: 2
-        suspend: true
+       # suspend: true
         backoffLimit: 0
         template:
           metadata:
+             #labels:
+             #  kueue.x-k8s.io/queue-name: dws-local-queue
              annotations:
                gke-gcsfuse/volumes: "true"
           spec:
@@ -28,15 +30,18 @@ spec:
             hostNetwork: true
             dnsPolicy: ClusterFirstWithHostNet
             nodeSelector:
-               #cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb
-               cloud.google.com/gke-accelerator: dws-a3-mega #dws
+               #cloud.google.com/gke-nodepool: dws-a3-mega
+               cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb
             tolerations:
                - key: "nvidia.com/gpu"
                  operator: "Exists"
                  effect: "NoSchedule"
-            serviceAccountName: storage-access
             restartPolicy: Never
+            serviceAccountName: storage-access
             volumes:
+            - name: nvidia
+              hostPath:
+                path: /home/kubernetes/bin/nvidia/lib64
             - name: libraries
               hostPath:
                 path: /home/kubernetes/bin/nvidia/lib64
@@ -82,11 +87,10 @@ spec:
                   chmod 755 /fts/entrypoint_rxdm_container.sh
                   /fts/entrypoint_rxdm_container.sh --num_hops=2 --num_nics=8 --uid= --alsologtostderr
               securityContext:
-                 capabilities:
-                   add:
-                    - NET_ADMIN
-                    - NET_BIND_SERVICE
+                privileged: true
               volumeMounts:
+                - name: nvidia
+                  mountPath: /usr/local/nvidia/lib64
                 - name: libraries
                   mountPath: /usr/local/nvidia
                 - name: sys
@@ -126,30 +130,31 @@ spec:
                     fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
               # Force python to not buffer output and write directly to stdout, so we can view training logs via `kubectl logs`.
               - name: PYTHONUNBUFFERED
-                value: "0"                   
-              - name: PYTHON_SCRIPT
-                value: "experiments/diffusion/diffusion.py --config=<CONFIG_FILE> --trainer.num_nodes=<NODE_COUNT> --trainer.logger.name=<JOB_NAME> --trainer.devices=auto <CONFIG_OPTIONS> fit"
+                value: "0"
+              #- name: PYTHON_SCRIPT
+              #  value: "experiments/diffusion/diffusion.py --config=<CONFIG_FILE> --trainer.num_nodes=<NODE_COUNT> --trainer.logger.name=<JOB_NAME> --trainer.devices=auto <CONFIG_OPTIONS> fit"
               - name: NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY
                 value: /dev/aperture_devices
               - name: LD_LIBRARY_PATH
-                value: /usr/local/nvidia/lib64  
+                value: /usr/local/nvidia/lib64
               # - name: TRITON_CACHE_DIR
               #   value: irreverent-datasets/torch-compiler-cache
               securityContext:
-                privileged: true    
-              command: 
+                privileged: true
+              command:
               - bash
               - -xc
               - |
                 NCCL_LIB_DIR="/usr/local/nvidia/lib64"
                 source ${NCCL_LIB_DIR}/nccl-env-profile.sh
+                #sleep infinity
                 #cp -r -f /data/llama3_lora_sft.yaml examples/train_lora/llama3_lora_sft.yaml
                 FORCE_TORCHRUN=1 NNODES=$NNODES RANK=$NODE_RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml
               resources:
                 requests:
-                  cpu: "8"
-                  memory: "25Gi"
-                  ephemeral-storage: "25Gi"
+                  #cpu: "8"
+                  #memory: "25Gi"
+                  #ephemeral-storage: "25Gi"
                   nvidia.com/gpu: 8
                 limits:
                   # cpu: "16"
@@ -157,6 +162,8 @@ spec:
                   # ephemeral-storage: "30Gi"
                   nvidia.com/gpu: 8
               volumeMounts:
+               - name: nvidia
+                 mountPath: /usr/local/nvidia/lib64
                - mountPath: /dev/shm
                  name: dshm
                - mountPath: /gcs-dir
@@ -170,3 +177,4 @@ spec:
                - name: output
                  mountPath: /app/output
                
+           
