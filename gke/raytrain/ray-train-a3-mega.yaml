@@ -1,24 +1,43 @@
 apiVersion: ray.io/v1
-kind: RayCluster
+kind: RayJob
 metadata:
-  name: raycluster
-  labels:
-    controller-tools.k8s.io: "1.0"
-
+  name: pytorch-mnist-job
 spec:
   shutdownAfterJobFinishes: true
   entrypoint: python gke/raytrain/train.py
   runtimeEnvYAML: |
-    pip:
-      - torch
-      - torchvision
     working_dir: "https://github.com/llm-on-gke/LLaMA-Factory/archive/main.zip"
-    env_vars:
-      NUM_WORKERS: "4"
-      CPUS_PER_WORKER: "2"
+    #env_vars:
+     #NUM_WORKERS: "4"
+     #CPUS_PER_WORKER: "2"
   rayClusterSpec:
     rayVersion: '2.9.0'
     headGroupSpec:
+      rayStartParams: {}
+      template:
+        spec:
+          containers:
+            - name: ray-head
+              image: rayproject/ray:2.9.0
+              ports:
+                - containerPort: 6379
+                  name: gcs-server
+                - containerPort: 8265
+                  name: dashboard
+                - containerPort: 10001
+                  name: client
+              resources:
+                limits:
+                  cpu: "2"
+                  memory: "4Gi"
+                requests:
+                  cpu: "2"
+                  memory: "4Gi"
+    workerGroupSpecs:
+    - replicas: 4
+      minReplicas: 1
+      maxReplicas: 5
+      groupName: small-group
       rayStartParams: {}
       template:
         spec:
