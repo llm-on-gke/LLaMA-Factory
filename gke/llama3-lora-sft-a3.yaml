@@ -8,59 +8,104 @@ spec:
   replicatedJobs:
   - name: workers
     template:
+      #DWS, uncomment metadata sesion
+      #metadata: 
+      # labels:
+      #   kueue.x-k8s.io/queue-name: dws-local-queue
+      # annotations:
+      #   provreq.kueue.x-k8s.io/maxRunDurationSeconds: "3600"
       spec:
         parallelism: 2
         completions: 2
+       # suspend: true #DWS uncomment this out
         backoffLimit: 0
         template:
-          #metadata:
-          #  annotations:
-          #     gke-gcsfuse/volumes: "true"
+          metadata:
+             annotations:
+               gke-gcsfuse/volumes: "true"
           spec:
-            nodeSelector:
-             cloud.google.com/gke-accelerator: nvidia-h100-80gb
+            #schedulingGates:
+            #- name: "gke.io/topology-aware-auto-scheduling-pytorch"
             hostNetwork: true
             dnsPolicy: ClusterFirstWithHostNet
+            nodeSelector:
+               #cloud.google.com/gke-nodepool: dws-a3-mega #for DWS
+               cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb
+            tolerations:
+               - key: "nvidia.com/gpu"
+                 operator: "Exists"
+                 effect: "NoSchedule"
+            restartPolicy: Never
+            serviceAccountName: storage-access
+            volumes:
+            - name: nvidia
+              hostPath:
+                path: /home/kubernetes/bin/nvidia/lib64
+            - name: libraries
+              hostPath:
+                path: /home/kubernetes/bin/nvidia/lib64
+            - name: sys
+              hostPath:
+                path: /sys
+            - name: proc-sys
+              hostPath:
+                path: /proc/sys
+            - name: aperture-devices
+              hostPath:
+                path: /dev/aperture_devices
+            - name: data
+              emptyDir: {}
+            - name: hf-cache
+              emptyDir: {}
+            - name: model-cache
+              emptyDir: {}
+            - name: output
+              emptyDir: {}
+            - name: gcs-fuse-csi-ephemeral
+              csi:
+                driver: gcsfuse.csi.storage.gke.io
+                readOnly: false
+                volumeAttributes:
+                   bucketName: rick-llama-factory
+                   mountOptions: "implicit-dirs"
+                   gcsfuseLoggingSeverity: warning
+                   fileCacheCapacity: "200Gi"
+
+            - name: dshm
+              emptyDir:
+                medium: Memory
+
             containers:
-            - name: tcpx-daemon 
-              image: us-docker.pkg.dev/gce-ai-infra/gpudirect-tcpx/tcpgpudmarxd-dev:v2.0.11
+            - name: tcpxo-daemon
+              image: us-docker.pkg.dev/gce-ai-infra/gpudirect-tcpxo/tcpgpudmarxd-dev:v1.0.11
               imagePullPolicy: Always
-              command:
-                - /tcpgpudmarxd/build/app/tcpgpudmarxd
-                - --gpu_nic_preset
-                - a3vm
-                - --gpu_shmem_type
-                - fd
-                - --uds_path
-                - /run/tcpx
-                - --setup_param
-                - \"--verbose 128 2 0 \"
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -ex
+                  chmod 755 /fts/entrypoint_rxdm_container.sh
+                  /fts/entrypoint_rxdm_container.sh --num_hops=2 --num_nics=8 --uid= --alsologtostderr
               securityContext:
                 privileged: true
               volumeMounts:
-               - name: libraries
-                 mountPath: /usr/local/nvidia/lib64
-                 readOnly: true
-               - name: tcpx-socket
-                 mountPath: /run/tcpx
-               - name: sys
-                 mountPath: /hostsysfs
-               - name: proc-sys
-                 mountPath: /hostprocsysfs
+                - name: nvidia
+                  mountPath: /usr/local/nvidia/lib64
+                - name: libraries
+                  mountPath: /usr/local/nvidia
+                - name: sys
+                  mountPath: /hostsysfs
+                - name: proc-sys
+                  mountPath: /hostprocsysfs
               env:
-               - name: LD_LIBRARY_PATH
-                 value: /usr/local/nvidia/lib64
+                - name: LD_LIBRARY_PATH
+                  value: /usr/local/nvidia/lib64
+
             - name: pytorch
-              image: us-east1-docker.pkg.dev/northam-ce-mlai-tpu/gke-llm/llama-factory:latest #us-east1-docker.pkg.dev/northam-ce-mlai-tpu/gke-llm/pytorch-mnist:latest
+              image: us-east1-docker.pkg.dev/northam-ce-mlai-tpu/gke-llm/llama-factory:latest
+              imagePullPolicy: Always
+              # image: gcr.io/k8s-staging-jobset/pytorch-mnist:latest
               ports:
               - containerPort: 3389
-              securityContext:
-                capabilities:
-                  add:
-                   - SYS_ADMIN
-                   - SYS_PTRACE
-                   - IPC_LOCK
-                privileged: true
               env:
               - name: HF_TOKEN
                 valueFrom:
@@ -72,86 +117,56 @@ spec:
                   secretKeyRef:
                      name: huggingface
                      key: HF_TOKEN
-              - name: BATCH_SIZE
-                value: '12'
-              - name: EPOCS
-                value: '12'
               - name: MASTER_ADDR
                 value: "pytorch-workers-0-0.pytorch"
               - name: MASTER_PORT
                 value: "3389"
-              - name: LOCAL_RANK
-                valueFrom:
-                  fieldRef:
-                    fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
-              # Force python to not buffer output and write directly to stdout, so we can view training logs via `kubectl logs`.
-              - name: NNODES
+              - name: NODE_COUNT
                 value: "2"
               - name: NODE_RANK
                 valueFrom:
                   fieldRef:
                     fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+              # Force python to not buffer output and write directly to stdout, so we can view training logs via `kubectl logs`.
               - name: PYTHONUNBUFFERED
                 value: "0"
-              - name: OMP_NUM_THREADS
-                value: "1"
+              #- name: PYTHON_SCRIPT
+              #  value: "experiments/diffusion/diffusion.py --config=<CONFIG_FILE> --trainer.num_nodes=<NODE_COUNT> --trainer.logger.name=<JOB_NAME> --trainer.devices=auto <CONFIG_OPTIONS> fit"
+              - name: NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY
+                value: /dev/aperture_devices
               - name: LD_LIBRARY_PATH
                 value: /usr/local/nvidia/lib64
-              - name: NCCL_ALGO
-                value: Ring
-              - name: NCCL_CROSS_NIC
-                value: "0"
-              - name: NCCL_DYNAMIC_CHUNK_SIZE
-                value: "524288"
-              - name: NCCL_GPUDIRECTTCPX_CTRL_DEV
-                value: eth0
-              - name: NCCL_GPUDIRECTTCPX_FORCE_ACK
-                value: "0"
-              - name: NCCL_GPUDIRECTTCPX_PROGRAM_FLOW_STEERING_WAIT_MICROS
-                value: "1000000"
-              - name: NCCL_GPUDIRECTTCPX_RX_BINDINGS
-                value: eth1:22-35,126-139;eth2:22-35,126-139;eth3:74-87,178-191;eth4:74-87,178-191
-              - name: NCCL_GPUDIRECTTCPX_SOCKET_IFNAME
-                value: eth1,eth2,eth3,eth4
-              - name: NCCL_GPUDIRECTTCPX_TX_BINDINGS
-                value: eth1:8-21,112-125;eth2:8-21,112-125;eth3:60-73,164-177;eth4:60-73,164-177
-              - name: NCCL_MAX_NCHANNELS
-                value: "12"
-              - name: NCCL_MIN_NCHANNELS
-                value: "12"
-              - name: NCCL_NET_GDR_LEVEL
-                value: PIX
-              - name: NCCL_NSOCKS_PERTHREAD
-                value: "4"
-              - name: NCCL_P2P_NET_CHUNKSIZE
-                value: "524288"
-              - name: NCCL_P2P_NVL_CHUNKSIZE
-                value: "1.048576e+06"
-              - name: NCCL_P2P_PCI_CHUNKSIZE
-                value: "524288"
-              - name: NCCL_P2P_PXN_LEVEL
-                value: "0"
-              - name: NCCL_PROTO
-                value: Simple
-              - name: NCCL_SOCKET_IFNAME
-                value: eth0
-              - name: NCCL_SOCKET_NTHREADS
-                value: "1"
-              resources:
-                limits:
-                  nvidia.com/gpu: 8
+              # - name: TRITON_CACHE_DIR
+              #   value: irreverent-datasets/torch-compiler-cache
+              securityContext:
+                privileged: true
               command:
               - bash
               - -xc
               - |
+                NCCL_LIB_DIR="/usr/local/nvidia/lib64"
+                source ${NCCL_LIB_DIR}/nccl-env-profile.sh
+                #sleep infinity
                 #cp -r -f /data/llama3_lora_sft.yaml examples/train_lora/llama3_lora_sft.yaml
                 FORCE_TORCHRUN=1 NNODES=$NNODES RANK=$NODE_RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml
+              resources:
+                requests:
+                  #cpu: "8"
+                  #memory: "25Gi"
+                  #ephemeral-storage: "25Gi"
+                  nvidia.com/gpu: 8
+                limits:
+                  # cpu: "16"
+                  # memory: "30Gi"
+                  # ephemeral-storage: "30Gi"
+                  nvidia.com/gpu: 8
               volumeMounts:
-               - name: tcpx-socket
-                 mountPath: /tmp
-               - name: libraries
+               - name: nvidia
                  mountPath: /usr/local/nvidia/lib64
-                 readOnly: true
+               - mountPath: /dev/shm
+                 name: dshm
+               - mountPath: /gcs-dir
+                 name: gcs-fuse-csi-ephemeral
                - name: data
                  mountPath: /data
                - name: hf-cache
@@ -160,32 +175,4 @@ spec:
                  mountPath: /root/.cache/modelscope
                - name: output
                  mountPath: /app/output
-            volumes:
-            - name: libraries
-              hostPath:
-               path: /home/kubernetes/bin/nvidia/lib64
-            - name: tcpx-socket
-              emptyDir: {}
-            - name: sys
-              hostPath:
-               path: /sys
-            - name: proc-sys
-              hostPath:
-                path: /proc/sys
-            - name: data
-              emptyDir: {}
-            - name: hf-cache
-              emptyDir: {}
-            - name: model-cache
-              emptyDir: {}
-            - name: output
-              emptyDir: {}
-            #- name: gcs-fuse-csi-ephemeral
-            #  csi:
-            #    driver: gcsfuse.csi.storage.gke.io
-            #    readOnly: false
-            #    volumeAttributes:
-            #       bucketName: rick-llama-factory
-            #       mountOptions: "implicit-dirs"
-            #       gcsfuseLoggingSeverity: warning
-            #       fileCacheCapacity: "200Gi"
+               
