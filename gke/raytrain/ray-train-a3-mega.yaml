@@ -1,4 +1,4 @@
-apiVersion: ray.io/v1alpha1
+apiVersion: ray.io/v1
 kind: RayCluster
 metadata:
   name: raycluster
@@ -130,7 +130,7 @@ spec:
                   value: /usr/local/nvidia/lib64
 
             - name: pytorch
-              image: us-east1-docker.pkg.dev/northam-ce-mlai-tpu/gke-llm/llama-factory:latest
+              image: rayproject/ray:2.9.0 #us-east1-docker.pkg.dev/northam-ce-mlai-tpu/gke-llm/llama-factory:latest
               imagePullPolicy: Always
               # image: gcr.io/k8s-staging-jobset/pytorch-mnist:latest
               ports:
@@ -168,6 +168,13 @@ spec:
                 value: /usr/local/nvidia/lib64
               # - name: TRITON_CACHE_DIR
               #   value: irreverent-datasets/torch-compiler-cache
+              lifecycle:
+               preStop:
+               exec:
+                command:
+                - /bin/sh
+                - -c
+                - ray stop
               securityContext:
                 privileged: true
               resources:
