@@ -34,11 +34,12 @@ spec:
                   cpu: "2"
                   memory: "4Gi"
     workerGroupSpecs:
-    - replicas: 4
+    - replicas: 2
       minReplicas: 1
       maxReplicas: 5
       groupName: small-group
-      rayStartParams: {}
+      rayStartParams: 
+         num-gpus: "8"
       template:
         spec:
           containers:
