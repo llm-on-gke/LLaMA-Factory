@@ -133,8 +133,9 @@ spec:
                 value: "0"
               #- name: PYTHON_SCRIPT
               #  value: "experiments/diffusion/diffusion.py --config=<CONFIG_FILE> --trainer.num_nodes=<NODE_COUNT> --trainer.logger.name=<JOB_NAME> --trainer.devices=auto <CONFIG_OPTIONS> fit"
-              - name: NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY
-                value: /dev/aperture_devices
+              
+              #- name: NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY
+              #  value: /dev/aperture_devices
               - name: LD_LIBRARY_PATH
                 value: /usr/local/nvidia/lib64
               # - name: TRITON_CACHE_DIR
