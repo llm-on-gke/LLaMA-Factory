@@ -8,20 +8,18 @@ spec:
   replicatedJobs:
   - name: workers
     template:
-      #metadata:
-      # labels:
-      #   kueue.x-k8s.io/queue-name: dws-local-queue
-      # annotations:
-      #   provreq.kueue.x-k8s.io/maxRunDurationSeconds: "3600"
+      metadata:
+       labels:
+         kueue.x-k8s.io/queue-name: dws-local-queue
+       annotations:
+         provreq.kueue.x-k8s.io/maxRunDurationDays: "7"
       spec:
         parallelism: 2
         completions: 2
-       # suspend: true
+        suspend: true
         backoffLimit: 0
         template:
           metadata:
-             #labels:
-             #  kueue.x-k8s.io/queue-name: dws-local-queue
              annotations:
                gke-gcsfuse/volumes: "true"
           spec:
@@ -150,7 +148,7 @@ spec:
                 source ${NCCL_LIB_DIR}/nccl-env-profile.sh
                 #sleep infinity
                 #cp -r -f /data/llama3_lora_sft.yaml examples/train_lora/llama3_lora_sft.yaml
-                FORCE_TORCHRUN=1 NNODES=$NNODES RANK=$NODE_RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml
+                FORCE_TORCHRUN=1 NNODES=$NODE_COUNT RANK=$NODE_RANK MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml
               resources:
                 requests:
                   #cpu: "8"
