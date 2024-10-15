@@ -25,11 +25,12 @@ spec:
           spec:
             #schedulingGates:
             #- name: "gke.io/topology-aware-auto-scheduling-pytorch"
+            restartPolicy: Never # dws
             hostNetwork: true
             dnsPolicy: ClusterFirstWithHostNet
             nodeSelector:
-               #cloud.google.com/gke-nodepool: dws-a3-mega
-               cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb
+               cloud.google.com/gke-nodepool: dws-a3-mega #dws
+               #cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb #non dws
             tolerations:
                - key: "nvidia.com/gpu"
                  operator: "Exists"
