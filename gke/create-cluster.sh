@@ -44,6 +44,17 @@ $CLUSTER_NAME --accelerator type=nvidia-l4,count=2,gpu-driver-version=latest   -
 --ephemeral-storage-local-ssd=count=0   --enable-autoscaling --enable-image-streaming   --num-nodes=0 --min-nodes=0 --max-nodes=3 \
 --shielded-secure-boot   --shielded-integrity-monitoring --node-locations $ZONE_1,$ZONE_2 --region $REGION --spot
 
+#Create nodepool with 4 A100 1g, 
+ gcloud container node-pools create a2-a100-1g --cluster $CLUSTER_NAME --accelerator type=nvidia-tesla-a100,count=1,gpu-driver-version=latest \
+  --machine-type a2-highgpu-1g --ephemeral-storage-local-ssd=count=0   --enable-autoscaling --enable-image-streaming   \
+  --num-nodes=0 --min-nodes=0 --max-nodes=4 --shielded-secure-boot   --shielded-integrity-monitoring --node-locations $REGION-a --region $REGION --spot
+
+# Create nodepool with 1 A100 8g, 
+ gcloud container node-pools create a2-a100-1g --cluster $CLUSTER_NAME --accelerator type=nvidia-tesla-a100,count=8,gpu-driver-version=latest \
+  --machine-type a2-highgpu-8g --ephemeral-storage-local-ssd=count=0   --enable-autoscaling --enable-image-streaming   \
+  --num-nodes=0 --min-nodes=0 --max-nodes=1 --shielded-secure-boot   --shielded-integrity-monitoring --node-locations $REGION-a --region $REGION --spot
+
+
 
 kubectl annotate serviceaccount $NAMESPACE \
     --namespace $NAMESPACE \
