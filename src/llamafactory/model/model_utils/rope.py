@@ -19,7 +19,7 @@
 import math
 from typing import TYPE_CHECKING
 
-from ...extras.logging import get_logger
+from ...extras import logging
 
 
 if TYPE_CHECKING:
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from ...hparams import ModelArguments
 
 
-logger = get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 def configure_rope(config: "PretrainedConfig", model_args: "ModelArguments", is_trainable: bool) -> None:
@@ -36,30 +36,36 @@ def configure_rope(config: "PretrainedConfig", model_args: "ModelArguments", is_
         return
 
     if not hasattr(config, "rope_scaling"):
-        logger.warning("Current model does not support RoPE scaling.")
+        logger.warning_rank0("Current model does not support RoPE scaling.")
         return
 
+    rope_kwargs = {}
     if model_args.model_max_length is not None:
         if is_trainable and model_args.rope_scaling == "dynamic":
-            logger.warning(
+            logger.warning_rank0(
                 "Dynamic NTK scaling may not work well with fine-tuning. "
                 "See: https://github.com/huggingface/transformers/pull/24653"
             )
 
         current_max_length = getattr(config, "max_position_embeddings", None)
         if current_max_length and model_args.model_max_length > current_max_length:
-            logger.info(
-                "Enlarge max model length from {} to {}.".format(current_max_length, model_args.model_max_length)
-            )
+            logger.info_rank0(f"Enlarge max model length from {current_max_length} to {model_args.model_max_length}.")
             setattr(config, "max_position_embeddings", model_args.model_max_length)
-            scaling_factor = float(math.ceil(model_args.model_max_length / current_max_length))
+            rope_kwargs["factor"] = float(math.ceil(model_args.model_max_length / current_max_length))
         else:
-            logger.warning("Input length is smaller than max length. Consider increase input length.")
-            scaling_factor = 1.0
-    else:
-        scaling_factor = 2.0
+            logger.warning_rank0("Input length is smaller than max length. Consider increase input length.")
+            rope_kwargs["factor"] = 1.0
 
-    setattr(config, "rope_scaling", {"type": model_args.rope_scaling, "factor": scaling_factor})
-    logger.info(
-        "Using {} scaling strategy and setting scaling factor to {}".format(model_args.rope_scaling, scaling_factor)
+        if model_args.rope_scaling == "dynamic":
+            rope_kwargs["original_max_position_embeddings"] = current_max_length
+        elif model_args.rope_scaling == "llama3":
+            rope_kwargs["original_max_position_embeddings"] = current_max_length
+            rope_kwargs["low_freq_factor"] = 1.0
+            rope_kwargs["high_freq_factor"] = 4.0
+    else:
+        rope_kwargs["factor"] = 2.0
+
+    setattr(config, "rope_scaling", {"rope_type": model_args.rope_scaling, **rope_kwargs})
+    logger.info_rank0(
+        f"Using {model_args.rope_scaling} scaling strategy and setting scaling factor to {rope_kwargs['factor']}."
     )

@@ -15,8 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass, field
-from typing import Literal, Optional
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, Literal, Optional
 
 
 @dataclass
@@ -41,8 +41,12 @@ class DataArguments:
         default="data",
         metadata={"help": "Path to the folder containing the datasets."},
     )
+    media_dir: Optional[str] = field(
+        default=None,
+        metadata={"help": "Path to the folder containing the images, videos or audios. Defaults to `dataset_dir`."},
+    )
     cutoff_len: int = field(
-        default=1024,
+        default=2048,
         metadata={"help": "The cutoff length of the tokenized inputs in the dataset."},
     )
     train_on_prompt: bool = field(
@@ -73,6 +77,10 @@ class DataArguments:
         default=False,
         metadata={"help": "Overwrite the cached training and evaluation sets."},
     )
+    preprocessing_batch_size: int = field(
+        default=1000,
+        metadata={"help": "The number of examples in one group in pre-processing."},
+    )
     preprocessing_num_workers: Optional[int] = field(
         default=None,
         metadata={"help": "The number of processes to use for the pre-processing."},
@@ -91,7 +99,7 @@ class DataArguments:
     )
     val_size: float = field(
         default=0.0,
-        metadata={"help": "Size of the development set, should be an integer or a float in range `[0,1)`."},
+        metadata={"help": "Size of the validation set, should be an integer or a float in range `[0,1)`."},
     )
     packing: Optional[bool] = field(
         default=None,
@@ -107,7 +115,13 @@ class DataArguments:
     )
     tokenized_path: Optional[str] = field(
         default=None,
-        metadata={"help": "Path to save or load the tokenized datasets."},
+        metadata={
+            "help": (
+                "Path to save or load the tokenized datasets. "
+                "If tokenized_path not exists, it will save the tokenized datasets. "
+                "If tokenized_path exists, it will load the tokenized datasets."
+            )
+        },
     )
 
     def __post_init__(self):
@@ -118,6 +132,9 @@ class DataArguments:
 
         self.dataset = split_arg(self.dataset)
         self.eval_dataset = split_arg(self.eval_dataset)
+
+        if self.media_dir is None:
+            self.media_dir = self.dataset_dir
 
         if self.dataset is None and self.val_size > 1e-6:
             raise ValueError("Cannot specify `val_size` if `dataset` is None.")
@@ -141,3 +158,9 @@ class DataArguments:
 
         if self.streaming and self.max_samples is not None:
             raise ValueError("`max_samples` is incompatible with `streaming`.")
+
+        if self.mask_history and self.train_on_prompt:
+            raise ValueError("`mask_history` is incompatible with `train_on_prompt`.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)

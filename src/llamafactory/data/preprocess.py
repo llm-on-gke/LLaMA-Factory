@@ -1,4 +1,4 @@
-# Copyright 2024 the LlamaFactory team.
+# Copyright 2025 the LlamaFactory team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Callable, Literal, Optional, Tuple
 
 from .processors.feedback import preprocess_feedback_dataset
 from .processors.pairwise import preprocess_pairwise_dataset, print_pairwise_dataset_example
-from .processors.pretrain import preprocess_pretrain_dataset
+from .processors.pretrain import preprocess_pretrain_dataset, print_pretrain_dataset_example
 from .processors.supervised import (
     preprocess_packed_supervised_dataset,
     preprocess_supervised_dataset,
@@ -47,10 +47,10 @@ def get_preprocess_and_print_func(
             tokenizer=tokenizer,
             data_args=data_args,
         )
-        print_function = partial(print_unsupervised_dataset_example, tokenizer=tokenizer)
+        print_function = partial(print_pretrain_dataset_example, tokenizer=tokenizer)
     elif stage == "sft" and not do_generate:
         if data_args.packing:
-            if data_args.neat_packing:
+            if data_args.neat_packing:  # hack datasets to have int32 attention mask
                 from datasets.arrow_writer import OptimizedTypedSequence, TypedSequence
 
                 def __init__(self, data, **kwargs):
@@ -67,6 +67,7 @@ def get_preprocess_and_print_func(
                 preprocess_packed_supervised_dataset,
                 template=template,
                 tokenizer=tokenizer,
+                processor=processor,
                 data_args=data_args,
             )
         else:

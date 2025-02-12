@@ -23,6 +23,8 @@ Currently we support datasets in **alpaca** and **sharegpt** format.
     "system": "the column name in the dataset containing the system prompts. (default: None)",
     "tools": "the column name in the dataset containing the tool description. (default: None)",
     "images": "the column name in the dataset containing the image inputs. (default: None)",
+    "videos": "the column name in the dataset containing the videos inputs. (default: None)",
+    "audios": "the column name in the dataset containing the audios inputs. (default: None)",
     "chosen": "the column name in the dataset containing the chosen answers. (default: None)",
     "rejected": "the column name in the dataset containing the rejected answers. (default: None)",
     "kto_tag": "the column name in the dataset containing the kto tags. (default: None)"
@@ -107,7 +109,7 @@ Regarding the above dataset, the *dataset description* in `dataset_info.json` sh
 
 ### Preference Dataset
 
-Preference datasets are used for reward modeling, DPO training and ORPO training.
+Preference datasets are used for reward modeling, DPO training, ORPO and SimPO training.
 
 It requires a better response in `chosen` column and a worse response in `rejected` column.
 
@@ -139,67 +141,19 @@ Regarding the above dataset, the *dataset description* in `dataset_info.json` sh
 
 ### KTO Dataset
 
-- [Example dataset](kto_en_demo.json)
+An additional column `kto_tag` is required. Please refer to the [sharegpt](#sharegpt-format) format for details.
 
-KTO datasets require a extra `kto_tag` column containing the boolean human feedback.
+### Multimodal Image Dataset
 
-```json
-[
-  {
-    "instruction": "human instruction (required)",
-    "input": "human input (optional)",
-    "output": "model response (required)",
-    "kto_tag": "human feedback [true/false] (required)"
-  }
-]
-```
+An additional column `images` is required. Please refer to the [sharegpt](#sharegpt-format) format for details.
 
-Regarding the above dataset, the *dataset description* in `dataset_info.json` should be:
+### Multimodal Video Dataset
 
-```json
-"dataset_name": {
-  "file_name": "data.json",
-  "columns": {
-    "prompt": "instruction",
-    "query": "input",
-    "response": "output",
-    "kto_tag": "kto_tag"
-  }
-}
-```
+An additional column `videos` is required. Please refer to the [sharegpt](#sharegpt-format) format for details.
 
-### Multimodal Dataset
+### Multimodal Audio Dataset
 
-- [Example dataset](mllm_demo.json)
-
-Multimodal datasets require a `images` column containing the paths to the input images. Currently we only support one image.
-
-```json
-[
-  {
-    "instruction": "human instruction (required)",
-    "input": "human input (optional)",
-    "output": "model response (required)",
-    "images": [
-      "image path (required)"
-    ]
-  }
-]
-```
-
-Regarding the above dataset, the *dataset description* in `dataset_info.json` should be:
-
-```json
-"dataset_name": {
-  "file_name": "data.json",
-  "columns": {
-    "prompt": "instruction",
-    "query": "input",
-    "response": "output",
-    "images": "images"
-  }
-}
-```
+An additional column `audios` is required. Please refer to the [sharegpt](#sharegpt-format) format for details.
 
 ## Sharegpt Format
 
@@ -252,6 +206,10 @@ Regarding the above dataset, the *dataset description* in `dataset_info.json` sh
 }
 ```
 
+### Pre-training Dataset
+
+Not yet supported, please use the [alpaca](#alpaca-format) format.
+
 ### Preference Dataset
 
 - [Example dataset](dpo_en_demo.json)
@@ -302,6 +260,166 @@ Regarding the above dataset, the *dataset description* in `dataset_info.json` sh
 }
 ```
 
+### KTO Dataset
+
+- [Example dataset](kto_en_demo.json)
+
+KTO datasets require a extra `kto_tag` column containing the boolean human feedback.
+
+```json
+[
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "human instruction"
+      },
+      {
+        "from": "gpt",
+        "value": "model response"
+      }
+    ],
+    "kto_tag": "human feedback [true/false] (required)"
+  }
+]
+```
+
+Regarding the above dataset, the *dataset description* in `dataset_info.json` should be:
+
+```json
+"dataset_name": {
+  "file_name": "data.json",
+  "formatting": "sharegpt",
+  "columns": {
+    "messages": "conversations",
+    "kto_tag": "kto_tag"
+  }
+}
+```
+
+### Multimodal Image Dataset
+
+- [Example dataset](mllm_demo.json)
+
+Multimodal image datasets require an `images` column containing the paths to the input images.
+
+The number of images should be identical to the `<image>` tokens in the conversations.
+
+```json
+[
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "<image>human instruction"
+      },
+      {
+        "from": "gpt",
+        "value": "model response"
+      }
+    ],
+    "images": [
+      "image path (required)"
+    ]
+  }
+]
+```
+
+Regarding the above dataset, the *dataset description* in `dataset_info.json` should be:
+
+```json
+"dataset_name": {
+  "file_name": "data.json",
+  "formatting": "sharegpt",
+  "columns": {
+    "messages": "conversations",
+    "images": "images"
+  }
+}
+```
+
+### Multimodal Video Dataset
+
+- [Example dataset](mllm_video_demo.json)
+
+Multimodal video datasets require a `videos` column containing the paths to the input videos.
+
+The number of videos should be identical to the `<video>` tokens in the conversations.
+
+```json
+[
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "<video>human instruction"
+      },
+      {
+        "from": "gpt",
+        "value": "model response"
+      }
+    ],
+    "videos": [
+      "video path (required)"
+    ]
+  }
+]
+```
+
+Regarding the above dataset, the *dataset description* in `dataset_info.json` should be:
+
+```json
+"dataset_name": {
+  "file_name": "data.json",
+  "formatting": "sharegpt",
+  "columns": {
+    "messages": "conversations",
+    "videos": "videos"
+  }
+}
+```
+
+### Multimodal Audio Dataset
+
+- [Example dataset](mllm_audio_demo.json)
+
+Multimodal audio datasets require an `audios` column containing the paths to the input audios.
+
+The number of audios should be identical to the `<audio>` tokens in the conversations.
+
+```json
+[
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "<audio>human instruction"
+      },
+      {
+        "from": "gpt",
+        "value": "model response"
+      }
+    ],
+    "audios": [
+      "audio path (required)"
+    ]
+  }
+]
+```
+
+Regarding the above dataset, the *dataset description* in `dataset_info.json` should be:
+
+```json
+"dataset_name": {
+  "file_name": "data.json",
+  "formatting": "sharegpt",
+  "columns": {
+    "messages": "conversations",
+    "audios": "audios"
+  }
+}
+```
+
 ### OpenAI Format
 
 The openai format is simply a special case of the sharegpt format, where the first message may be a system prompt.
@@ -345,7 +463,3 @@ Regarding the above dataset, the *dataset description* in `dataset_info.json` sh
   }
 }
 ```
-
-The KTO datasets and multimodal datasets in sharegpt format are similar to the alpaca format.
-
-Pre-training datasets are **incompatible** with the sharegpt format.

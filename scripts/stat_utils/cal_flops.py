@@ -1,5 +1,4 @@
-# coding=utf-8
-# Copyright 2024 Microsoft Corporation and the LlamaFactory team.
+# Copyright 2025 Microsoft Corporation and the LlamaFactory team.
 #
 # This code is inspired by the Microsoft's DeepSpeed library.
 # https://www.deepspeed.ai/tutorials/flops-profiler/
@@ -27,7 +26,7 @@ from llamafactory.chat import ChatModel
 def calculate_flops(
     model_name_or_path: str,
     batch_size: int = 1,
-    seq_length: int = 256,
+    seq_length: int = 512,
     flash_attn: str = "auto",
 ):
     r"""
@@ -36,9 +35,11 @@ def calculate_flops(
     """
     with get_accelerator().device(0):
         chat_model = ChatModel(dict(model_name_or_path=model_name_or_path, template="empty", flash_attn=flash_attn))
-        fake_input = torch.ones((batch_size, seq_length), dtype=torch.long, device=chat_model.model.device)
+        fake_input = torch.ones((batch_size, seq_length), dtype=torch.long, device=chat_model.engine.model.device)
         input_dict = {"input_ids": fake_input, "labels": fake_input.clone()}
-        flops, macs, params = get_model_profile(chat_model.model, kwargs=input_dict, print_profile=True, detailed=True)
+        flops, macs, params = get_model_profile(
+            chat_model.engine.model, kwargs=input_dict, print_profile=True, detailed=True
+        )
         print("FLOPs:", flops)
         print("MACs:", macs)
         print("Params:", params)

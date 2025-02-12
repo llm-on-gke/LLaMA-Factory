@@ -34,7 +34,7 @@ done
 
 ##create nodepool with 1L4 per node
 gcloud container node-pools create l4-node-pool --cluster \
-$CLUSTER_NAME --accelerator type=nvidia-l4,count=1,gpu-driver-version=latest   --machine-type g2-standard-8 \
+$CLUSTER_NAME --accelerator type=nvidia-l4,count=1,gpu-driver-version=default   --machine-type g2-standard-8 \
 --ephemeral-storage-local-ssd=count=1   --enable-autoscaling --enable-image-streaming   --num-nodes=0 --min-nodes=0 --max-nodes=3 \
 --shielded-secure-boot   --shielded-integrity-monitoring --node-locations $ZONE_1,$ZONE_2 --region $REGION --spot
 
