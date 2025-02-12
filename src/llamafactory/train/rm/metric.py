@@ -1,4 +1,4 @@
-# Copyright 2024 the LlamaFactory team.
+# Copyright 2025 the LlamaFactory team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,6 +26,10 @@ if TYPE_CHECKING:
 
 @dataclass
 class ComputeAccuracy:
+    r"""
+    Computes reward accuracy and supports `batch_eval_metrics`.
+    """
+
     def _dump(self) -> Optional[Dict[str, float]]:
         result = None
         if hasattr(self, "score_dict"):

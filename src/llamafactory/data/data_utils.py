@@ -1,4 +1,4 @@
-# Copyright 2024 the LlamaFactory team.
+# Copyright 2025 the LlamaFactory team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Set, TypedDict
 
 from datasets import DatasetDict, concatenate_datasets, interleave_datasets
 
-from ..extras.logging import get_logger
+from ..extras import logging
 
 
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from ..hparams import DataArguments
 
 
-logger = get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 SLOTS = Sequence[Union[str, Set[str], Dict[str, str]]]
@@ -49,16 +49,19 @@ class DatasetModule(TypedDict):
 def merge_dataset(
     all_datasets: List[Union["Dataset", "IterableDataset"]], data_args: "DataArguments", seed: int
 ) -> Union["Dataset", "IterableDataset"]:
+    r"""
+    Merges multiple datasets to a unified dataset.
+    """
     if len(all_datasets) == 1:
         return all_datasets[0]
     elif data_args.mix_strategy == "concat":
         if data_args.streaming:
-            logger.warning("The samples between different datasets will not be mixed in streaming mode.")
+            logger.warning_rank0_once("The samples between different datasets will not be mixed in streaming mode.")
 
         return concatenate_datasets(all_datasets)
     elif data_args.mix_strategy.startswith("interleave"):
         if not data_args.streaming:
-            logger.warning("We recommend using `mix_strategy=concat` in non-streaming mode.")
+            logger.warning_rank0_once("We recommend using `mix_strategy=concat` in non-streaming mode.")
 
         return interleave_datasets(
             datasets=all_datasets,
@@ -67,14 +70,16 @@ def merge_dataset(
             stopping_strategy="first_exhausted" if data_args.mix_strategy.endswith("under") else "all_exhausted",
         )
     else:
-        raise ValueError("Unknown mixing strategy.")
+        raise ValueError(f"Unknown mixing strategy: {data_args.mix_strategy}.")
 
 
 def split_dataset(
     dataset: Union["Dataset", "IterableDataset"], data_args: "DataArguments", seed: int
 ) -> "DatasetDict":
     r"""
-    Splits the dataset and returns a dataset dict containing train set (required) and validation set (optional).
+    Splits the dataset and returns a dataset dict containing train set and validation set.
+
+    Supports both map dataset and iterable dataset.
     """
     if data_args.streaming:
         dataset = dataset.shuffle(buffer_size=data_args.buffer_size, seed=seed)

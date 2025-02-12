@@ -17,7 +17,7 @@
 
 from typing import TYPE_CHECKING, List, Optional
 
-from ...data import KTODataCollatorWithPadding, get_dataset
+from ...data import KTODataCollatorWithPadding, get_dataset, get_template_and_fix_tokenizer
 from ...extras.constants import IGNORE_INDEX
 from ...extras.ploting import plot_loss
 from ...hparams import ModelArguments
@@ -41,13 +41,16 @@ def run_kto(
 ):
     tokenizer_module = load_tokenizer(model_args)
     tokenizer = tokenizer_module["tokenizer"]
-    dataset_module = get_dataset(model_args, data_args, training_args, stage="kto", **tokenizer_module)
+    template = get_template_and_fix_tokenizer(tokenizer, data_args)
+    dataset_module = get_dataset(template, model_args, data_args, training_args, stage="kto", **tokenizer_module)
     model = load_model(tokenizer, model_args, finetuning_args, training_args.do_train)
 
     data_collator = KTODataCollatorWithPadding(
-        tokenizer=tokenizer,
+        template=template,
+        model=model,
         pad_to_multiple_of=8,
         label_pad_token_id=IGNORE_INDEX if data_args.ignore_pad_token_for_loss else tokenizer.pad_token_id,
+        **tokenizer_module,
     )
 
     # Create reference model
@@ -57,7 +60,7 @@ def run_kto(
         ref_model = create_ref_model(model_args, finetuning_args)
 
     # Update arguments
-    training_args.remove_unused_columns = False  # important for pairwise dataset
+    training_args.remove_unused_columns = False  # important for multimodal and pairwise dataset
 
     # Initialize our Trainer
     trainer = CustomKTOTrainer(
@@ -79,7 +82,7 @@ def run_kto(
         trainer.save_metrics("train", train_result.metrics)
         trainer.save_state()
         if trainer.is_world_process_zero() and finetuning_args.plot_loss:
-            plot_loss(training_args.output_dir, keys=["loss", "eval_loss", "train/rewards/chosen"])
+            plot_loss(training_args.output_dir, keys=["loss", "eval_loss", "rewards/chosen"])
 
     # Evaluation
     if training_args.do_eval:

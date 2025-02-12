@@ -1,4 +1,4 @@
-# Copyright 2024 the LlamaFactory team.
+# Copyright 2025 the LlamaFactory team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ from peft import PeftModel
 from transformers import AutoModelForCausalLM
 from trl import AutoModelForCausalLMWithValueHead
 
-from ..data import get_dataset
+from ..data import get_dataset, get_template_and_fix_tokenizer
 from ..extras.misc import get_current_device
 from ..hparams import get_infer_args, get_train_args
 from ..model import load_model, load_tokenizer
@@ -80,18 +80,17 @@ def load_reference_model(
     is_trainable: bool = False,
     add_valuehead: bool = False,
 ) -> Union["PreTrainedModel", "LoraModel"]:
+    current_device = get_current_device()
     if add_valuehead:
         model: "AutoModelForCausalLMWithValueHead" = AutoModelForCausalLMWithValueHead.from_pretrained(
-            model_path, torch_dtype=torch.float16, device_map=get_current_device()
+            model_path, torch_dtype=torch.float16, device_map=current_device
         )
         if not is_trainable:
             model.v_head = model.v_head.to(torch.float16)
 
         return model
 
-    model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.float16, device_map=get_current_device()
-    )
+    model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16, device_map=current_device)
     if use_lora or use_pissa:
         model = PeftModel.from_pretrained(
             model, lora_path, subfolder="pissa_init" if use_pissa else None, is_trainable=is_trainable
@@ -105,11 +104,12 @@ def load_reference_model(
 def load_train_dataset(**kwargs) -> "Dataset":
     model_args, data_args, training_args, _, _ = get_train_args(kwargs)
     tokenizer_module = load_tokenizer(model_args)
-    dataset_module = get_dataset(model_args, data_args, training_args, stage=kwargs["stage"], **tokenizer_module)
+    template = get_template_and_fix_tokenizer(tokenizer_module["tokenizer"], data_args)
+    dataset_module = get_dataset(template, model_args, data_args, training_args, kwargs["stage"], **tokenizer_module)
     return dataset_module["train_dataset"]
 
 
-def patch_valuehead_model():
+def patch_valuehead_model() -> None:
     def post_init(self: "AutoModelForCausalLMWithValueHead", state_dict: Dict[str, "torch.Tensor"]) -> None:
         state_dict = {k[7:]: state_dict[k] for k in state_dict.keys() if k.startswith("v_head.")}
         self.v_head.load_state_dict(state_dict, strict=False)

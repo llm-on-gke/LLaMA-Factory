@@ -1,4 +1,4 @@
-# Copyright 2024 the LlamaFactory team.
+# Copyright 2025 the LlamaFactory team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .collator import KTODataCollatorWithPadding, PairwiseDataCollatorWithPadding, SFTDataCollatorWith4DAttentionMask
+from .collator import (
+    KTODataCollatorWithPadding,
+    MultiModalDataCollatorForSeq2Seq,
+    PairwiseDataCollatorWithPadding,
+    SFTDataCollatorWith4DAttentionMask,
+)
 from .data_utils import Role, split_dataset
 from .loader import get_dataset
 from .template import TEMPLATES, Template, get_template_and_fix_tokenizer
@@ -20,6 +25,7 @@ from .template import TEMPLATES, Template, get_template_and_fix_tokenizer
 
 __all__ = [
     "KTODataCollatorWithPadding",
+    "MultiModalDataCollatorForSeq2Seq",
     "PairwiseDataCollatorWithPadding",
     "SFTDataCollatorWith4DAttentionMask",
     "Role",
