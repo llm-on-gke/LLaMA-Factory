@@ -4,15 +4,15 @@ apiVersion: jobset.x-k8s.io/v1alpha2
 kind: JobSet
 metadata:
   name: pytorch
+  metadata:
+    labels:
+       kueue.x-k8s.io/queue-name: dws-local-queue
+    annotations:
+       provreq.kueue.x-k8s.io/maxRunDurationDays: "7"
 spec:
   replicatedJobs:
   - name: workers
     template:
-      metadata:
-       labels:
-         kueue.x-k8s.io/queue-name: dws-local-queue
-       annotations:
-         provreq.kueue.x-k8s.io/maxRunDurationDays: "7"
       spec:
         parallelism: 2
         completions: 2
@@ -35,7 +35,6 @@ spec:
                - key: "nvidia.com/gpu"
                  operator: "Exists"
                  effect: "NoSchedule"
-            restartPolicy: Never
             serviceAccountName: storage-access
             volumes:
             - name: nvidia
