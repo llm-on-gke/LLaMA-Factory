@@ -11,7 +11,7 @@ spec:
       spec:
         parallelism: 2
         completions: 2
-        suspend: true
+        #suspend: true
         backoffLimit: 0
         template:
           metadata:

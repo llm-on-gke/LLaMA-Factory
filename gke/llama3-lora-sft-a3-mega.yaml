@@ -4,11 +4,13 @@ apiVersion: jobset.x-k8s.io/v1alpha2
 kind: JobSet
 metadata:
   name: pytorch
+  #For DWS
   metadata:
     labels:
        kueue.x-k8s.io/queue-name: dws-local-queue
     annotations:
        provreq.kueue.x-k8s.io/maxRunDurationDays: "7"
+  #End for dws
 spec:
   replicatedJobs:
   - name: workers
@@ -16,7 +18,7 @@ spec:
       spec:
         parallelism: 2
         completions: 2
-        suspend: true
+        suspend: true # DWS
         backoffLimit: 0
         template:
           metadata:
@@ -29,29 +31,26 @@ spec:
             hostNetwork: true
             dnsPolicy: ClusterFirstWithHostNet
             nodeSelector:
-               cloud.google.com/gke-nodepool: dws-a3-mega #dws
-               #cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb #non dws
+               cloud.google.com/gke-nodepool: dws-a3-mega #for dws
+               #cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb #for non dws
             tolerations:
                - key: "nvidia.com/gpu"
                  operator: "Exists"
                  effect: "NoSchedule"
             serviceAccountName: storage-access
             volumes:
-            - name: nvidia
-              hostPath:
-                path: /home/kubernetes/bin/nvidia/lib64
             - name: libraries
               hostPath:
-                path: /home/kubernetes/bin/nvidia/lib64
+                path: /home/kubernetes/bin/nvidia
             - name: sys
               hostPath:
-                path: /sys
+               path: /sys
             - name: proc-sys
               hostPath:
-                path: /proc/sys
+               path: /proc/sys
             - name: aperture-devices
               hostPath:
-                path: /dev/aperture_devices
+               path: /dev/aperture_devices
             - name: data
               emptyDir: {}
             - name: hf-cache
@@ -76,7 +75,7 @@ spec:
 
             containers:
             - name: tcpxo-daemon
-              image: us-docker.pkg.dev/gce-ai-infra/gpudirect-tcpxo/tcpgpudmarxd-dev:v1.0.11
+              image: us-docker.pkg.dev/gce-ai-infra/gpudirect-tcpxo/tcpgpudmarxd-dev:v1.0.14
               imagePullPolicy: Always
               command: ["/bin/sh", "-c"]
               args:
@@ -87,14 +86,12 @@ spec:
               securityContext:
                 privileged: true
               volumeMounts:
-                - name: nvidia
-                  mountPath: /usr/local/nvidia/lib64
-                - name: libraries
-                  mountPath: /usr/local/nvidia
-                - name: sys
-                  mountPath: /hostsysfs
-                - name: proc-sys
-                  mountPath: /hostprocsysfs
+               - name: libraries
+                 mountPath: /usr/local/nvidia
+               - name: sys
+                 mountPath: /hostsysfs
+               - name: proc-sys
+                 mountPath: /hostprocsysfs
               env:
                 - name: LD_LIBRARY_PATH
                   value: /usr/local/nvidia/lib64
@@ -129,17 +126,12 @@ spec:
               # Force python to not buffer output and write directly to stdout, so we can view training logs via `kubectl logs`.
               - name: PYTHONUNBUFFERED
                 value: "0"
-              #- name: PYTHON_SCRIPT
-              #  value: "experiments/diffusion/diffusion.py --config=<CONFIG_FILE> --trainer.num_nodes=<NODE_COUNT> --trainer.logger.name=<JOB_NAME> --trainer.devices=auto <CONFIG_OPTIONS> fit"
-              
-              #- name: NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY
-              #  value: /dev/aperture_devices
               - name: LD_LIBRARY_PATH
                 value: /usr/local/nvidia/lib64
-              # - name: TRITON_CACHE_DIR
-              #   value: irreverent-datasets/torch-compiler-cache
+              - name: NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY
+                value: /dev/aperture_devices
               securityContext:
-                privileged: true
+                #privileged: true
               command:
               - bash
               - -xc
@@ -161,8 +153,8 @@ spec:
                   # ephemeral-storage: "30Gi"
                   nvidia.com/gpu: 8
               volumeMounts:
-               - name: nvidia
-                 mountPath: /usr/local/nvidia/lib64
+               - name: aperture-devices
+                 mountPath: /dev/aperture_devices
                - mountPath: /dev/shm
                  name: dshm
                - mountPath: /gcs-dir
