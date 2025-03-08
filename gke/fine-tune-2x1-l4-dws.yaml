@@ -2,7 +2,10 @@ apiVersion: jobset.x-k8s.io/v1alpha2
 kind: JobSet
 metadata:
   name: pytorch
-  
+  labels:
+       kueue.x-k8s.io/queue-name: dws-local-queue
+  annotations:
+       provreq.kueue.x-k8s.io/maxRunDurationDays: "7"
 spec:
   replicatedJobs:
   - name: workers
@@ -11,13 +14,19 @@ spec:
         parallelism: 2
         completions: 2
         backoffLimit: 0
+        suspend: true
         template:
           metadata:
             annotations:
                gke-gcsfuse/volumes: "true"
           spec:
            nodeSelector:
-             cloud.google.com/gke-accelerator: nvidia-l4 
+             #cloud.google.com/gke-accelerator: nvidia-l4 
+              cloud.google.com/gke-nodepool: dws-l4-pool
+           tolerations:
+               - key: "nvidia.com/gpu"
+                 operator: "Exists"
+                 effect: "NoSchedule"
            serviceAccountName: csi-storage
            volumes:
            - name: gcs-fuse-csi-ephemeral
