@@ -4,11 +4,9 @@ apiVersion: jobset.x-k8s.io/v1alpha2
 kind: JobSet
 metadata:
   name: pytorch
-  #For DWS
-  metadata:
-    labels:
+  labels:
        kueue.x-k8s.io/queue-name: dws-local-queue
-    annotations:
+  annotations:
        provreq.kueue.x-k8s.io/maxRunDurationDays: "7"
   #End for dws
 spec:
