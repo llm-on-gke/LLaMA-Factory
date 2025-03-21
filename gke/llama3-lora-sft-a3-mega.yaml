@@ -153,6 +153,8 @@ spec:
               volumeMounts:
                - name: aperture-devices
                  mountPath: /dev/aperture_devices
+               - name: libraries
+                 mountPath: /usr/local/nvidia
                - mountPath: /dev/shm
                  name: dshm
                - mountPath: /gcs-dir
@@ -165,5 +167,6 @@ spec:
                  mountPath: /root/.cache/modelscope
                - name: output
                  mountPath: /app/output
+              
                
            
