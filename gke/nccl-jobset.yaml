@@ -165,7 +165,7 @@ spec:
                     export NCCL_LIB_DIR="/usr/local/nvidia/lib64"
                     # Set all the correct libnccl-gib environment variables
                     #source /usr/local/gib/scripts/set_nccl_env.sh
-                    source ${NCCL_LIB_DIR}/nccl-env-profile.sh
+                    source ${NCCL_LIB_DIR}/nccl-env-profile-ll128.sh
                     # Get all relevant NCCL / env vars to pass to all workers
                     ENV_VARS=$(echo ${!NCCL*} ${!OMPI*} LD_LIBRARY_PATH PATH | sed 's/ / -x /g')
 
