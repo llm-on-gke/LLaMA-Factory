@@ -41,7 +41,7 @@ spec:
               effect: "NoSchedule"
             hostNetwork: true
             dnsPolicy: ClusterFirstWithHostNet
-            setHostnameAsFQDN: true
+            #setHostnameAsFQDN: true
             volumes:
             - name: nvidia
               hostPath:
