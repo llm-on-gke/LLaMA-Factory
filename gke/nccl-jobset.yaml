@@ -33,7 +33,8 @@ spec:
             activeDeadlineSeconds: 3600
             restartPolicy: Never
             nodeSelector:
-              cloud.google.com/gke-nodepool: a3-mega
+              #cloud.google.com/gke-nodepool: dws-a3-mega #for dws
+               cloud.google.com/gke-accelerator: nvidia-h100-mega-80gb 
             tolerations:
             - key: "nvidia.com/gpu"
               operator: "Exists"
