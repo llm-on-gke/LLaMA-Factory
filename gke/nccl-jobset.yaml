@@ -152,7 +152,7 @@ spec:
 
                 # For every worker, wait till online and add to hostfile
                 for i in `seq 0 $(($N_NODES-1))`; do
-                  OTHER=${hostname_prefix}-${hostname_suffix}-0-${i}.${hostname_prefix}
+                  OTHER="${hostname_prefix}-${hostname_suffix}-0-${i}.${hostname_prefix}""
                   until ssh -p 222 -o StrictHostKeyChecking=no $OTHER hostname; do
                     echo Waiting for ${OTHER}...
                     sleep 10
@@ -184,19 +184,19 @@ spec:
                     WARMUP_ITERS="${WARMUP_ITERS:-5}"
                     sleep infinity;
                     mpirun --mca btl tcp,self --mca btl_tcp_if_include eth0 --allow-run-as-root \
-                      -np $(( GPU_PER_NODE * "${N_NODES}" )) \
-                      --hostfile /tmp/hostfile \
-                      -x NCCL_DEBUG_FILE="/tmp/${BENCHMARK}"-%h-%p.log \
-                      -x NCCL_TOPO_DUMP_FILE="/tmp/${BENCHMARK}"_topo.txt \
-                      -x NCCL_GRAPH_DUMP_FILE="/tmp/${BENCHMARK}"_graph.txt \
-                      -x LD_LIBRARY_PATH -x PATH \
-                      -x NCCL_DEBUG=INFO -x NCCL_DEBUG_SUBSYS=INIT,NET \
-                      -x NCCL_TESTS_SPLIT_MASK="${NCCL_TESTS_SPLIT_MASK:-0x0}" \
-                      -x NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY="${NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY}" \
-                      -x NCCL_LIB_DIR="${NCCL_LIB_DIR}" \
-                      taskset -c 32-63 /scripts/demo_mpi_entry_with_config_profile.sh "${BENCHMARK}" \
-                      -b "${DATA_MIN}" -e "${DATA_MAX}" -f 2 -g 1 -w "${WARMUP_ITERS}" --iters "${RUN_ITERS}" 2>&1 | \
-                      tee "/tmp/${BENCHMARK}_nh${N_NODES}_ng${GPU_PER_NODE}_i${RUN_ITERS}.txt"
+                    -np $(( GPU_PER_NODE * "${N_NODES}" )) \
+                    --hostfile /tmp/hostfile \
+                    -x NCCL_DEBUG_FILE="/tmp/${BENCHMARK}"-%h-%p.log \
+                    -x NCCL_TOPO_DUMP_FILE="/tmp/${BENCHMARK}"_topo.txt \
+                    -x NCCL_GRAPH_DUMP_FILE="/tmp/${BENCHMARK}"_graph.txt \
+                    -x LD_LIBRARY_PATH -x PATH \
+                    -x NCCL_DEBUG=INFO -x NCCL_DEBUG_SUBSYS=INIT,NET \
+                    -x NCCL_TESTS_SPLIT_MASK="${NCCL_TESTS_SPLIT_MASK:-0x0}" \
+                    -x NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY="${NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY}" \
+                    -x NCCL_LIB_DIR="${NCCL_LIB_DIR}" \
+                    taskset -c 32-63 /scripts/demo_mpi_entry_with_config_profile.sh "${BENCHMARK}" \
+                    -b "${DATA_MIN}" -e "${DATA_MAX}" -f 2 -g 1 -w "${WARMUP_ITERS}" --iters "${RUN_ITERS}" 2>&1 | \
+                    tee "/tmp/${BENCHMARK}_nh${N_NODES}_ng${GPU_PER_NODE}_i${RUN_ITERS}.txt"
 
                 else
                     while ping -c 1 ${hostname_prefix}-${hostname_suffix}-0-0.${hostname_prefix}; do
