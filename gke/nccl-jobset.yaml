@@ -184,7 +184,7 @@ spec:
                     WARMUP_ITERS="${WARMUP_ITERS:-5}"
                     #sleep infinity;
                     mpirun --mca btl tcp,self --mca btl_tcp_if_include eth0 --allow-run-as-root \
-                    --mca orte_keep_fqdn_hostnames 1 
+                    --mca orte_keep_fqdn_hostnames 1 \
                     -np $(( GPU_PER_NODE * "${N_NODES}" )) \
                     --hostfile /tmp/hostfile \
                     -x NCCL_DEBUG_FILE="/tmp/${BENCHMARK}"-%h-%p.log \
@@ -195,7 +195,7 @@ spec:
                     -x NCCL_TESTS_SPLIT_MASK="${NCCL_TESTS_SPLIT_MASK:-0x0}" \
                     -x NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY="${NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY}" \
                     -x NCCL_LIB_DIR="${NCCL_LIB_DIR}" \
-                    --mca plm_rsh_agent "ssh -q -o LogLevel=ERROR -o StrictHostKeyChecking=no -p 222"
+                    --mca plm_rsh_agent "ssh -q -o LogLevel=ERROR -o StrictHostKeyChecking=no -p 222" \
                     taskset -c 32-63 /scripts/demo_mpi_entry_with_config_profile.sh "${BENCHMARK}" \
                     -b "${DATA_MIN}" -e "${DATA_MAX}" -f 2 -g 1 -w "${WARMUP_ITERS}" --iters "${RUN_ITERS}" 2>&1 | \
                     tee "/tmp/${BENCHMARK}_nh${N_NODES}_ng${GPU_PER_NODE}_i${RUN_ITERS}.txt"
