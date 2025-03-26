@@ -186,7 +186,7 @@ spec:
                       /third_party/nccl-tests/build/all_gather_perf -b 1K -e 8G -f 2 -g 1 -w 5 --iters 100 -c 1
 
                 else
-                    while ping -c 1 ${WORKERS_BASENAME}-0.${POSTFIX}; do
+                    while ping -c 1 ${hostname_prefix}-${hostname_suffix}-0-0.${hostname_prefix}; do
                     sleep 5
                 done
                 fi
