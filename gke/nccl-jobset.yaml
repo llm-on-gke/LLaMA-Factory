@@ -112,7 +112,7 @@ spec:
               - name: LD_LIBRARY_PATH
                 value: /usr/local/nvidia/lib64
               - name: N_NODES
-                value: 2
+                value: "1"
               - name: hostname_prefix
                 valueFrom:
                   fieldRef:
