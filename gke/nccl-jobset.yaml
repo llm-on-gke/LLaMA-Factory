@@ -52,7 +52,7 @@ spec:
                 sizeLimit: 250Gi
             initContainers:
             - name: gpu-healthcheck
-              image: alpine:latest
+              image: "nvidia/cuda:12.8.1-base-ubuntu22.044" #alpine:latest
               command: ["/bin/sh", "-c"]
               args:
               - |
