@@ -111,10 +111,15 @@ spec:
               env:
               - name: LD_LIBRARY_PATH
                 value: /usr/local/nvidia/lib64
-              - name: MY_NODE_NAME
+              - name: hostname_prefix
                 valueFrom:
                   fieldRef:
-                    fieldPath: spec.nodeName
+                    fieldPath: metadata.annotations['jobset.sigs.k8s.io/jobset-name']
+              - name: hostname_suffix
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.annotations['jobset.sigs.k8s.io/replicatedjob-name']
+                
               - name: OMPI_ALLOW_RUN_AS_ROOT
                 value: "1"
               - name: OMPI_ALLOW_RUN_AS_ROOT_CONFIRM
@@ -138,14 +143,14 @@ spec:
                 /scripts/container_entry.sh daemon &
 
                 # Get helper variables to form all hostnames
-                export POSTFIX=$(hostname | cut -d . -f 2-)
-                export WORKERS_BASENAME=$(hostname | cut -d . -f 1 | rev | cut -d - -f 2- | rev )
+                #export POSTFIX=$(hostname | cut -d . -f 2-)
+                #export WORKERS_BASENAME=$(hostname | cut -d . -f 1 | rev | cut -d - -f 2- | rev )
                 export NODE_RANK=$JOB_COMPLETION_INDEX
 
 
                 # For every worker, wait till online and add to hostfile
                 for i in `seq 0 $(($N_NODES-1))`; do
-                  OTHER=${WORKERS_BASENAME}-${i}.${POSTFIX}
+                  OTHER=${hostname_prefix}-${i}.${hostname_suffix}
                   until ssh -p 222 -o StrictHostKeyChecking=no $OTHER hostname; do
                     echo Waiting for ${OTHER}...
                     sleep 10
