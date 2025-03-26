@@ -111,6 +111,8 @@ spec:
               env:
               - name: LD_LIBRARY_PATH
                 value: /usr/local/nvidia/lib64
+              - name: N_NODES
+                value: 2
               - name: hostname_prefix
                 valueFrom:
                   fieldRef:
@@ -129,7 +131,7 @@ spec:
               - -c
               - |
                 set -x
-                export N_NODES=2
+        
                 echo "Starting workload container on ${MY_NODE_NAME} for $N_NODES benchmark"
 
                 # Load all the cuda libs
@@ -165,7 +167,7 @@ spec:
 
                     # World Level = 0x0, Rail Aligned = 0x7
                     export NCCL_TESTS_SPLIT_MASK="0x0";
-
+                    
                     # Force use of libnccl-gib
                     #export NCCL_NET=gIB
                     export NCCL_LIB_DIR="/usr/local/nvidia/lib64"
@@ -174,16 +176,27 @@ spec:
                     source ${NCCL_LIB_DIR}/nccl-env-profile-ll128.sh
                     # Get all relevant NCCL / env vars to pass to all workers
                     ENV_VARS=$(echo ${!NCCL*} ${!OMPI*} LD_LIBRARY_PATH PATH | sed 's/ / -x /g')
-
-                    mpirun --hostfile /tmp/hostfile \
-                      -x $ENV_VARS  \
-                      -mca plm_rsh_no_tree_spawn 1 \
-                      --mca orte_keep_fqdn_hostnames 1 \
-                      --mca btl self,tcp \
-                      --mca btl_tcp_if_include eth0 \
-                      --bind-to none \
-                      --mca plm_rsh_agent "ssh -q -o LogLevel=ERROR -o StrictHostKeyChecking=no -p 222" \
-                      /third_party/nccl-tests/build/all_gather_perf -b 1K -e 8G -f 2 -g 1 -w 5 --iters 100 -c 1
+                    BENCHMARK=all_gather_perf
+                    DATA_MIN="${DATA_MIN:-8}"
+                    DATA_MAX="${DATA_MAX:-8G}"
+                    GPU_PER_NODE="${GPU_PER_NODE:-8}"
+                    RUN_ITERS="${RUN_ITERS:-20}"
+                    WARMUP_ITERS="${WARMUP_ITERS:-5}"
+          
+                    mpirun --mca btl tcp,self --mca btl_tcp_if_include eth0 --allow-run-as-root \
+                      -np $(( GPU_PER_NODE * "${N_NODES}" )) \
+                      --hostfile /tmp/hostfile \
+                      -x NCCL_DEBUG_FILE="/tmp/${BENCHMARK}"-%h-%p.log \
+                      -x NCCL_TOPO_DUMP_FILE="/tmp/${BENCHMARK}"_topo.txt \
+                      -x NCCL_GRAPH_DUMP_FILE="/tmp/${BENCHMARK}"_graph.txt \
+                      -x LD_LIBRARY_PATH -x PATH \
+                      -x NCCL_DEBUG=INFO -x NCCL_DEBUG_SUBSYS=INIT,NET \
+                      -x NCCL_TESTS_SPLIT_MASK="${NCCL_TESTS_SPLIT_MASK:-0x0}" \
+                      -x NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY="${NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY}" \
+                      -x NCCL_LIB_DIR="${NCCL_LIB_DIR}" \
+                      taskset -c 32-63 /scripts/demo_mpi_entry_with_config_profile.sh "${BENCHMARK}" \
+                      -b "${DATA_MIN}" -e "${DATA_MAX}" -f 2 -g 1 -w "${WARMUP_ITERS}" --iters "${RUN_ITERS}" 2>&1 | \
+                      tee "/tmp/${BENCHMARK}_nh${N_NODES}_ng${GPU_PER_NODE}_i${RUN_ITERS}.txt"
 
                 else
                     while ping -c 1 ${hostname_prefix}-${hostname_suffix}-0-0.${hostname_prefix}; do
