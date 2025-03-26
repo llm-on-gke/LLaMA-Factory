@@ -158,7 +158,7 @@ spec:
                      sleep 10
                     done
                     echo ${firsthost} port=222 slots=8 | tee /tmp/hostfile;
-                    next=i+1
+                    next=$((i+1))
                     if [[ "${next}" -lt "${N_NODES}" ]]; then
                       secondhost=${hostname_prefix}-${hostname_suffix}-0-${next}.${hostname_prefix}
                       until ssh -p 222 -o StrictHostKeyChecking=no $secondhost hostname; do
