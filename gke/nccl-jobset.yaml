@@ -112,7 +112,7 @@ spec:
               - name: LD_LIBRARY_PATH
                 value: /usr/local/nvidia/lib64
               - name: N_NODES
-                value: "1"
+                value: "2"
               - name: hostname_prefix
                 valueFrom:
                   fieldRef:
@@ -182,7 +182,7 @@ spec:
                     GPU_PER_NODE="${GPU_PER_NODE:-8}"
                     RUN_ITERS="${RUN_ITERS:-20}"
                     WARMUP_ITERS="${WARMUP_ITERS:-5}"
-          
+                    sleep infinity;
                     mpirun --mca btl tcp,self --mca btl_tcp_if_include eth0 --allow-run-as-root \
                       -np $(( GPU_PER_NODE * "${N_NODES}" )) \
                       --hostfile /tmp/hostfile \
