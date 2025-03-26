@@ -150,7 +150,7 @@ spec:
 
                 # For every worker, wait till online and add to hostfile
                 for i in `seq 0 $(($N_NODES-1))`; do
-                  OTHER=${hostname_prefix}-${i}.${hostname_suffix}
+                  OTHER=${hostname_prefix}-0-${i}.${hostname_suffix}
                   until ssh -p 222 -o StrictHostKeyChecking=no $OTHER hostname; do
                     echo Waiting for ${OTHER}...
                     sleep 10
