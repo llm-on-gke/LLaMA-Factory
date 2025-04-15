@@ -5,12 +5,13 @@ REGION=europe-west1
 ZONE=europe-west1-b
 
 gcloud container clusters create CLUSTER_NAME \
-  --project=PROJECT_ID \
-  --region=COMPUTE_REGION [--zone=COMPUTE_ZONE] \
-  --cluster-version=CLUSTER_VERSION \
+  --project=$PROJECT \
+  --region=$REGION  \
+  --workload-pool ${PROJECT}.svc.id.goog \
+  --enable-image-streaming \
+  --addons GcsFuseCsiDriver \
   --enable-dataplane-v2 --enable-ip-alias --enable-multi-networking \
-  [--services-ipv4-cidr=SERVICE_CIDR \
-  --cluster-ipv4-cidr=POD_CIDR]
+  --scopes="gke-default,storage-rw"
 
 gcloud container node-pools create a3-ultra-h200 \
   --region $REGION --cluster gke-a3ultra-manual \
