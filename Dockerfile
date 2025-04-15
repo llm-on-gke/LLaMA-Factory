@@ -28,7 +28,7 @@ RUN if [ -n "$HTTP_PROXY" ]; then \
         export http_proxy=$HTTP_PROXY; \
         export https_proxy=$HTTP_PROXY; \
     fi
-RUN apt-get -y install pciutils
+#RUN apt-get -y install pciutils
 # Install the requirements
 COPY requirements.txt /app
 RUN pip config set global.index-url "$PIP_INDEX" && \
