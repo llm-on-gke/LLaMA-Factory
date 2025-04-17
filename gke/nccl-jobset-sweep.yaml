@@ -50,39 +50,39 @@ spec:
               emptyDir:
                 medium: "Memory"
                 sizeLimit: 250Gi
-            initContainers:
-            - name: gpu-healthcheck
-              image: "nvidia/cuda:12.8.1-base-ubuntu20.04" #alpine:latest
-              command: ["/bin/sh", "-c"]
-              args:
-              - |
-                apk add --no-cache bash  # Install bash
-                /bin/bash -c "set -ex
-                NUM_GPUS=$(/usr/local/nvidia/bin/nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits | wc -l)
-                if [ \${NUM_GPUS} -lt 8 ]; then
-                  echo \"Error: Only \${NUM_GPUS} GPUs and expected 8\"
-                  exit 1
-                fi
-                gpu_errors=(\$(/usr/local/nvidia/bin/nvidia-smi --query-gpu=ecc.errors.uncorrected.volatile.total --format=csv,noheader,nounits))
-                for gpu_index in \${!gpu_errors[@]}; do
-                    if [ \${gpu_errors[\$gpu_index]} == '[N/A]' ]; then
-                        echo 'Error: ERR detected in GPU index '\$gpu_index
-                        exit 1
-                    elif [ \${gpu_errors[\$gpu_index]} -gt 0 ]; then
-                        echo 'Error: Unrecoverable ECC errors detected in GPU index '\$gpu_index
-                        exit 1
-                    fi
-                done
-                echo \${NUM_GPUS} GPUs found with no ERR or Unrecoverable ECC errors"
+            #initContainers:
+            #- name: gpu-healthcheck
+            #  image: "nvidia/cuda:12.8.1-base-ubuntu20.04" #alpine:latest
+            #  command: ["/bin/sh", "-c"]
+            #  args:
+            #  - |
+            #    apk add --no-cache bash  # Install bash
+            #    /bin/bash -c "set -ex
+            #    NUM_GPUS=$(/usr/local/nvidia/bin/nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits | wc -l)
+            #    if [ \${NUM_GPUS} -lt 8 ]; then
+            #      echo \"Error: Only \${NUM_GPUS} GPUs and expected 8\"
+            #      exit 1
+            #    fi
+            #    gpu_errors=(\$(/usr/local/nvidia/bin/nvidia-smi --query-gpu=ecc.errors.uncorrected.volatile.total --format=csv,noheader,nounits))
+            #    for gpu_index in \${!gpu_errors[@]}; do
+            #        if [ \${gpu_errors[\$gpu_index]} == '[N/A]' ]; then
+            #            echo 'Error: ERR detected in GPU index '\$gpu_index
+            #            exit 1
+            #        elif [ \${gpu_errors[\$gpu_index]} -gt 0 ]; then
+            #            echo 'Error: Unrecoverable ECC errors detected in GPU index '\$gpu_index
+            #            exit 1
+            #        fi
+            #    done
+            #    echo \${NUM_GPUS} GPUs found with no ERR or Unrecoverable ECC errors"
 
-              volumeMounts:
-              - name: nvidia
-                mountPath: /usr/local/nvidia
-              securityContext:
-                privileged: true
-              env:
-              - name: LD_LIBRARY_PATH
-                value: /usr/local/nvidia/lib64
+            #  volumeMounts:
+            #  - name: nvidia
+            #    mountPath: /usr/local/nvidia
+            #  securityContext:
+            #    privileged: true
+            #  env:
+            #  - name: LD_LIBRARY_PATH
+            #    value: /usr/local/nvidia/lib64
 
             containers:
             - name: tcpxo-daemon
@@ -159,6 +159,7 @@ spec:
                     done
                     echo ${firsthost} port=222 slots=8 | tee /tmp/hostfile;
                     next=$((i+1))
+                    echo "Processing pair nodes: ${i}"
                     if [[ "${next}" -lt "${N_NODES}" ]]; then
                       secondhost=${hostname_prefix}-${hostname_suffix}-0-${next}.${hostname_prefix}
                       until ssh -p 222 -o StrictHostKeyChecking=no $secondhost hostname; do
