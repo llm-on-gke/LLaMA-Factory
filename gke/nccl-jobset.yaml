@@ -143,7 +143,9 @@ spec:
 
                 # Start sshd
                 /scripts/container_entry.sh daemon &
-
+                cp /scripts/demo_mpi_entry_with_config_profile.sh /tmp/demo_mpi_entry_with_config_profile.sh
+                echo "source source ${NCCL_LIB_DIR}/nccl-env-profile-ll128.sh" >> /tmp/demo_mpi_entry_with_config_profile.sh
+                chmod +x /tmp/scripts/demo_mpi_entry_with_config_profile.sh 
                 # Get helper variables to form all hostnames
                 #export POSTFIX=$(hostname | cut -d . -f 2-)
                 #export WORKERS_BASENAME=$(hostname | cut -d . -f 1 | rev | cut -d - -f 2- | rev )
@@ -196,7 +198,7 @@ spec:
                     -x NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY="${NCCL_FASTRAK_LLCM_DEVICE_DIRECTORY}" \
                     -x NCCL_LIB_DIR="${NCCL_LIB_DIR}" \
                     --mca plm_rsh_agent "ssh -q -o LogLevel=ERROR -o StrictHostKeyChecking=no -p 222" \
-                    taskset -c 32-63 /scripts/demo_mpi_entry_with_config_profile.sh "${BENCHMARK}" \
+                    taskset -c 32-63 /tmp/demo_mpi_entry_with_config_profile.sh "${BENCHMARK}" \
                     -b "${DATA_MIN}" -e "${DATA_MAX}" -f 2 -g 1 -w "${WARMUP_ITERS}" --iters "${RUN_ITERS}" 2>&1 | \
                     tee "/tmp/${BENCHMARK}_nh${N_NODES}_ng${GPU_PER_NODE}_i${RUN_ITERS}.txt"
 
