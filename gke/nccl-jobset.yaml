@@ -138,8 +138,8 @@ spec:
                 /sbin/ldconfig
 
                 # Install ping
-                apt update -y
-                apt install -y iputils-ping
+                # apt update -y
+                # apt install -y iputils-ping
 
                 # Start sshd
                 /scripts/container_entry.sh daemon &
@@ -203,8 +203,8 @@ spec:
                     tee "/tmp/${BENCHMARK}_nh${N_NODES}_ng${GPU_PER_NODE}_i${RUN_ITERS}.txt"
 
                 else
-                    while ping -c 1 ${hostname_prefix}-${hostname_suffix}-0-0.${hostname_prefix}; do
-                    sleep 5
+                    while ssh -p 222 -o StrictHostKeyChecking=no ${hostname_prefix}-${hostname_suffix}-0-0.${hostname_prefix}; do
+                    sleep 20
                 done
                 fi
 
