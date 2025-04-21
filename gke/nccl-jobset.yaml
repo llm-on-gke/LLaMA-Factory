@@ -204,8 +204,8 @@ spec:
 
                 else
                     while ssh -p 222 -o StrictHostKeyChecking=no ${hostname_prefix}-${hostname_suffix}-0-0.${hostname_prefix}; do
-                    sleep 20
-                done
+                      sleep 20
+                    done
                 fi
 
                 exit 0
