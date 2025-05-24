@@ -145,7 +145,7 @@ spec:
                 /scripts/container_entry.sh daemon &
                 cp /scripts/demo_mpi_entry_with_config_profile.sh /tmp/demo_mpi_entry_with_config_profile.sh
                 echo "source source ${NCCL_LIB_DIR}/nccl-env-profile-ll128.sh" >> /tmp/demo_mpi_entry_with_config_profile.sh
-                chmod +x /tmp/scripts/demo_mpi_entry_with_config_profile.sh 
+                chmod +x /tmp/demo_mpi_entry_with_config_profile.sh 
                 # Get helper variables to form all hostnames
                 #export POSTFIX=$(hostname | cut -d . -f 2-)
                 #export WORKERS_BASENAME=$(hostname | cut -d . -f 1 | rev | cut -d - -f 2- | rev )

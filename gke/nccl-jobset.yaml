@@ -16,6 +16,8 @@ apiVersion: jobset.x-k8s.io/v1alpha2
 kind: JobSet
 metadata:
   name: nccl-test
+  labels:
+    kueue.x-k8s.io/queue-name: a3mega
 spec:
   ttlSecondsAfterFinished: 1200
   suspend: False
@@ -24,6 +26,9 @@ spec:
   replicatedJobs:
   - name: nccl
     template:
+      metadata:
+        annotations:
+           kueue.x-k8s.io/podset-preferred-topology: "kubernetes.io/hostname"
       spec:
         parallelism: 2
         completions: 2
