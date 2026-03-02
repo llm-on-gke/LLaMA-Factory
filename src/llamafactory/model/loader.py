@@ -22,7 +22,6 @@ from transformers import (
     AutoModelForImageTextToText,
     AutoModelForSeq2SeqLM,
     AutoModelForTextToWaveform,
-    AutoModelForVision2Seq,
     AutoProcessor,
     AutoTokenizer,
 )
@@ -30,6 +29,7 @@ from trl import AutoModelForCausalLMWithValueHead
 
 from ..extras import logging
 from ..extras.misc import count_parameters, skip_check_imports, try_download_model_from_other_hub
+from ..extras.packages import is_torch_version_greater_than
 from .adapter import init_adapter
 from .model_utils.ktransformers import load_kt_pretrained_model
 from .model_utils.liger_kernel import apply_liger_kernel
@@ -158,17 +158,16 @@ def load_model(
     if model is None and not lazy_load:
         init_kwargs["config"] = config
         init_kwargs["pretrained_model_name_or_path"] = model_args.model_name_or_path
+        init_kwargs["torch_dtype"] = "auto"
 
         if model_args.mixture_of_depths == "load":
             model = load_mod_pretrained_model(**init_kwargs)
         else:
             if type(config) in AutoModelForImageTextToText._model_mapping.keys():  # image-text
                 load_class = AutoModelForImageTextToText
-            elif type(config) in AutoModelForVision2Seq._model_mapping.keys():  # image-text
-                load_class = AutoModelForVision2Seq
             elif type(config) in AutoModelForSeq2SeqLM._model_mapping.keys():  # audio-text
                 load_class = AutoModelForSeq2SeqLM
-            elif type(config) in AutoModelForTextToWaveform._model_mapping.keys():  # audio hack for qwen omni
+            elif type(config) in AutoModelForTextToWaveform._model_mapping.keys():  # audio-text for qwen omni
                 load_class = AutoModelForTextToWaveform
             else:
                 load_class = AutoModelForCausalLM
@@ -203,12 +202,18 @@ def load_model(
             model.load_state_dict(vhead_params, strict=False)
             logger.info_rank0(f"Loaded valuehead from checkpoint: {vhead_path}")
 
+    # Conv3D is not recommended when using torch 2.9.x
+    if is_torch_version_greater_than("2.9.0") and not is_torch_version_greater_than("2.10.0"):
+        if any(isinstance(m, torch.nn.Conv3d) for m in model.modules()):
+            raise ValueError(
+                "Unsupported torch version detected: torch 2.9.x with Conv3D. "
+                "This combination is known to cause severe performance regression. "
+                "Please downgrade torch to <2.9 or remove Conv3D. "
+                "See https://github.com/pytorch/pytorch/issues/166122"
+            )
+
     if not is_trainable:
         model.requires_grad_(False)
-        for param in model.parameters():
-            if param.data.dtype == torch.float32 and model_args.compute_dtype != torch.float32:
-                param.data = param.data.to(model_args.compute_dtype)
-
         model.eval()
     else:
         model.train()
@@ -220,9 +225,9 @@ def load_model(
             "You are try to using future feature about kernels, please note that this feature "
             "is not supported for all models. If get any error, please disable this feature, or report the issue."
         )
-        from ..v1.plugins.model_plugins.kernels.registry import apply_available_kernels
+        from ..v1.plugins.model_plugins.kernels.interface import apply_default_kernels
 
-        model = apply_available_kernels(model)
+        model = apply_default_kernels(model, include_kernels=model_args.use_v1_kernels)
 
     trainable_params, all_param = count_parameters(model)
     if is_trainable:

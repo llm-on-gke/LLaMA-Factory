@@ -77,10 +77,20 @@ def add_z3_leaf_module(model: "PreTrainedModel") -> None:
 
         _set_z3_leaf_modules(model, [Glm4MoeMoE])
 
+    if model_type == "glm4_moe_lite":
+        from transformers.models.glm4_moe_lite.modeling_glm4_moe_lite import Glm4MoeLiteMoE
+
+        _set_z3_leaf_modules(model, [Glm4MoeLiteMoE])
+
     if model_type == "glm4v_moe":
         from transformers.models.glm4v_moe.modeling_glm4v_moe import Glm4vMoeTextMoE
 
         _set_z3_leaf_modules(model, [Glm4vMoeTextMoE])
+
+    if model_type == "gpt_oss":
+        from transformers.models.gpt_oss.modeling_gpt_oss import GptOssMLP
+
+        _set_z3_leaf_modules(model, [GptOssMLP])
 
     if model_type == "jamba":
         from transformers.models.jamba.modeling_jamba import JambaSparseMoeBlock
@@ -127,10 +137,15 @@ def add_z3_leaf_module(model: "PreTrainedModel") -> None:
 
         _set_z3_leaf_modules(model, [Qwen3VLMoeTextSparseMoeBlock])
 
-    if model_type == "qwen3_omni_moe":
+    if model_type in ("qwen3_omni_moe", "qwen3_omni_moe_thinker"):
         from transformers.models.qwen3_omni_moe.modeling_qwen3_omni_moe import Qwen3OmniMoeThinkerTextSparseMoeBlock
 
         _set_z3_leaf_modules(model, [Qwen3OmniMoeThinkerTextSparseMoeBlock])
+
+    if model_type == "qwen3_next":
+        from transformers.models.qwen3_next.modeling_qwen3_next import Qwen3NextSparseMoeBlock
+
+        _set_z3_leaf_modules(model, [Qwen3NextSparseMoeBlock])
 
 
 def configure_moe(config: "PretrainedConfig", model_args: "ModelArguments", is_trainable: bool) -> None:

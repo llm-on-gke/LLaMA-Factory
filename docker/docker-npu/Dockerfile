@@ -1,14 +1,10 @@
 # https://hub.docker.com/r/ascendai/cann/tags
 
-# default base image build for A2, if build for A3, using this image:
-# ARG BASE_IMAGE=ascendai/cann:8.3.rc1-a3-ubuntu22.04-py3.11
-
-ARG BASE_IMAGE=ascendai/cann:8.3.rc1-910b-ubuntu22.04-py3.11
+ARG BASE_IMAGE=quay.io/ascend/cann:8.3.rc2-910b-ubuntu22.04-py3.11
 FROM ${BASE_IMAGE}
 
 # Installation arguments
 ARG PIP_INDEX=https://pypi.org/simple
-ARG EXTRAS=torch-npu,metrics
 ARG HTTP_PROXY=""
 ARG PYTORCH_INDEX=https://download.pytorch.org/whl/cpu
 
@@ -31,21 +27,16 @@ WORKDIR /app
 # Change pip source
 RUN pip config set global.index-url "${PIP_INDEX}" && \
     pip config set global.extra-index-url "${PIP_INDEX}" && \
-    pip install --no-cache-dir --upgrade pip packaging wheel setuptools
+    pip install --no-cache-dir --upgrade pip packaging wheel setuptools editables "hatchling>=1.18.0"
+
+# Copy the application into the image
+COPY . /app
 
 # Install torch-npu
 RUN pip uninstall -y torch torchvision torchaudio && \
-    pip install --no-cache-dir "torch==2.7.1" "torch-npu==2.7.1" "torchvision==0.22.1" --index-url "${PYTORCH_INDEX}"
-
-# Install the requirements
-COPY requirements.txt /app
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the rest of the application into the image
-COPY . /app
-
-# Install LLaMA Factory
-RUN pip install --no-cache-dir -e ".[${EXTRAS}]" --no-build-isolation
+    pip install --no-cache-dir "torch==2.7.1" "torch-npu==2.7.1" "torchvision==0.22.1" "torchaudio==2.7.1" --index-url "${PYTORCH_INDEX}" && \
+    pip install --no-cache-dir -e . --no-build-isolation && \
+    pip install --no-cache-dir -r requirements/metrics.txt --no-build-isolation
 
 # Set up volumes
 # VOLUME [ "/root/.cache/huggingface", "/app/shared_data", "/app/output" ]
